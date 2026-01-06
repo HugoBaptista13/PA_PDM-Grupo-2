@@ -274,6 +274,6 @@ fun InserirCampanhaScreen(
 
 @Preview(showBackground = true)
 @Composable
-fun InsirirCampanhaPreview() {
+fun InserirCampanhaPreview() {
     InserirCampanhaScreen ()
 }
