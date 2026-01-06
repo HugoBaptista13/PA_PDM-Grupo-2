@@ -28,7 +28,7 @@ fun CandidaturaPag2Screen(
     var alimentar by remember { mutableStateOf(false) }
     var higiene by remember { mutableStateOf(false) }
     var limpeza by remember { mutableStateOf(false) }
-    var erroValidacao by remember { mutableStateOf(false) }  // ✅ ADICIONADO AQUI
+    var erroValidacao by remember { mutableStateOf(false) }
 
     Column(
         modifier = Modifier
@@ -160,7 +160,7 @@ fun CandidaturaPag2Screen(
                     Checkbox(checked = limpeza, onCheckedChange = { limpeza = it })
                 }
             }
-        }  // ✅ Fecha FORMULÁRIO
+        }
 
         Spacer(modifier = Modifier.weight(1f))
 
