@@ -49,6 +49,8 @@ android {
 
 dependencies {
 
+    implementation(libs.androidx.compose.foundation.layout)
+    implementation(libs.androidx.material3)
     dependencies {
 
             implementation("androidx.core:core-ktx:1.13.1")
