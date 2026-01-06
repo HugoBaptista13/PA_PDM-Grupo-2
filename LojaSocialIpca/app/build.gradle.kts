@@ -53,7 +53,12 @@ dependencies {
     implementation(libs.androidx.material3)
     dependencies {
 
-            implementation("androidx.core:core-ktx:1.13.1")
+
+            implementation("androidx.compose.material:material-icons-extended")
+        
+
+
+        implementation("androidx.core:core-ktx:1.13.1")
             implementation("androidx.appcompat:appcompat:1.7.0")
             implementation("com.google.android.material:material:1.12.0")
 

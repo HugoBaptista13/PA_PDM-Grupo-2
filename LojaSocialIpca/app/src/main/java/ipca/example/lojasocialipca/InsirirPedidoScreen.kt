@@ -18,7 +18,7 @@ import androidx.compose.ui.unit.sp
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun InsirirProdutoScreen(
+fun InserirProdutoScreen(
     onBack: () -> Unit = {},
     onInserirProduto: () -> Unit = {}
 ) {
@@ -82,40 +82,15 @@ fun InsirirProdutoScreen(
                 .padding(horizontal = 16.dp, vertical = 8.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            // Tipo de produto (dropdown simples)
-            Column {
-                Text("Tipo", fontSize = 14.sp, fontWeight = FontWeight.SemiBold)
+            val tipos = listOf("Produtos Alimentar", "Produto Hegiene", "Produto Hegiene Pessoal")
 
-                ExposedDropdownMenuBox(
-                    expanded = tipoExpanded,
-                    onExpandedChange = { tipoExpanded = !tipoExpanded }
-                ) {
-                    OutlinedTextField(
-                        value = tipo,
-                        onValueChange = { },
-                        readOnly = true,
-                        modifier = Modifier
-                            .menuAnchor()
-                            .fillMaxWidth(),
-                        label = { Text("Tipo de produto") }
-                    )
-
-                    ExposedDropdownMenu(
-                        expanded = tipoExpanded,
-                        onDismissRequest = { tipoExpanded = false }
-                    ) {
-                        tipos.forEach { option ->
-                            DropdownMenuItem(
-                                text = { Text(option) },
-                                onClick = {
-                                    tipo = option
-                                    tipoExpanded = false
-                                }
-                            )
-                        }
-                    }
-                }
-            }
+            ComboBox(
+                label = "Tipo",
+                selected = "Produtos Alimentar",
+                options = tipos,
+                onSelect = {},
+                modifier = Modifier
+            )
 
             // Descrição do produto
             Column {
@@ -183,6 +158,6 @@ fun InsirirProdutoScreen(
 
 @Preview(showBackground = true, showSystemUi = true)
 @Composable
-fun InsirirProdutoScreenPreview() {
-    InsirirProdutoScreen()
+fun InserirProdutoScreenPreview() {
+    InserirProdutoScreen()
 }

@@ -110,46 +110,17 @@ fun InserirCampanhaScreen(
             }
 
             // Tipo (simples: duas opções fixas)
-            var tipo by remember { mutableStateOf("Interna") }
-            var tipoExpanded by remember { mutableStateOf(false) }
+
             val tipos = listOf("Interna", "Externa")
 
+            ComboBox(
+                label = "Tipo",
+                selected = "Interna",
+                options = tipos,
+                onSelect = {},
+                modifier = Modifier
+            )
 
-            Column {
-                Text("Tipo", fontSize = 14.sp, fontWeight = FontWeight.SemiBold)
-
-                ExposedDropdownMenuBox(
-                    expanded = tipoExpanded,
-                    onExpandedChange = {
-                        tipoExpanded = !tipoExpanded
-                    } // clicar na caixa abre/fecha
-                ) {
-                    OutlinedTextField(
-                        value = tipo,
-                        onValueChange = { },
-                        readOnly = true,
-                        modifier = Modifier
-                            .menuAnchor()          // ancora o menu à caixa
-                            .fillMaxWidth(),
-                        label = { Text("Tipo de campanha") }
-                    )
-
-                    ExposedDropdownMenu(
-                        expanded = tipoExpanded,
-                        onDismissRequest = { tipoExpanded = false }
-                    ) {
-                        tipos.forEach { option ->
-                            DropdownMenuItem(
-                                text = { Text(option) },
-                                onClick = {
-                                    tipo = option      // muda o texto da caixa
-                                    tipoExpanded = false  // volta a “fechar” a caixa
-                                }
-                            )
-                        }
-                    }
-                }
-            }
             // Data de início
             Text(
                 "Data de início",
