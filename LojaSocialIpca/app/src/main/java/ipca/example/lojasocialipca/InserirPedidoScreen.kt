@@ -83,13 +83,12 @@ fun InserirPedidoScreen(
                 .padding(horizontal = 16.dp, vertical = 8.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            val tipos = listOf("Produtos Alimentar", "Produto Hegiene", "Produto Hegiene Pessoal")
 
             ComboBox(
                 label = "Tipo",
-                selected = "Produtos Alimentar",
+                selected = tipo,
                 options = tipos,
-                onSelect = {},
+                onSelect = {tipo=it},
                 modifier = Modifier
             )
 
