@@ -19,9 +19,9 @@ import androidx.compose.ui.unit.sp
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun InserirProdutoScreen(
+fun InserirPedidoScreen(
     onBack: () -> Unit = {},
-    onInserirProduto: () -> Unit = {}
+    onInserirPedido: () -> Unit = {}
 ) {
     var tipo by remember { mutableStateOf("Produto Alimentar") }
     var tipoExpanded by remember { mutableStateOf(false) }
@@ -70,7 +70,7 @@ fun InserirProdutoScreen(
 
         // TÍTULO
         Text(
-            text = "Inserir Produto",
+            text = "Inserir Pedido",
             fontSize = 20.sp,
             fontWeight = FontWeight.Bold,
             modifier = Modifier.padding(top = 16.dp, start = 16.dp, end = 16.dp)
@@ -83,13 +83,12 @@ fun InserirProdutoScreen(
                 .padding(horizontal = 16.dp, vertical = 8.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            val tipos = listOf("Produtos Alimentar", "Produto Hegiene", "Produto Hegiene Pessoal")
 
             ComboBox(
                 label = "Tipo",
-                selected = "Produtos Alimentar",
+                selected = tipo,
                 options = tipos,
-                onSelect = {},
+                onSelect = {tipo=it},
                 modifier = Modifier
             )
 
@@ -108,7 +107,7 @@ fun InserirProdutoScreen(
                     label = {
                         Text(
                             if (erro && descricao.isBlank()) "Preenche a descrição"
-                            else "Descrição do produto"
+                            else "Descrição do pedido"
                         )
                     },
                     isError = erro && descricao.isBlank(),
@@ -142,7 +141,7 @@ fun InserirProdutoScreen(
                 onClick = {
                     val valido = descricao.isNotBlank()
                     if (valido) {
-                        onInserirProduto()
+                        onInserirPedido()
                     } else {
                         erro = true
                     }
@@ -151,7 +150,7 @@ fun InserirProdutoScreen(
                 shape = RoundedCornerShape(12.dp),
                 modifier = Modifier.fillMaxWidth()
             ) {
-                Text("Inserir Produto")
+                Text("Inserir Pedido")
             }
         }
     }
@@ -159,6 +158,6 @@ fun InserirProdutoScreen(
 
 @Preview(showBackground = true, showSystemUi = true)
 @Composable
-fun InserirProdutoScreenPreview() {
-    InserirProdutoScreen()
+fun InserirPedidoScreenPreview() {
+    InserirPedidoScreen()
 }

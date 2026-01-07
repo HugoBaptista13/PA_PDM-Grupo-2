@@ -111,13 +111,11 @@ fun InserirCampanhaScreen(
 
             // Tipo (simples: duas opções fixas)
 
-            val tipos = listOf("Interna", "Externa")
-
             ComboBox(
                 label = "Tipo",
-                selected = "Interna",
+                selected = tipo,
                 options = tipos,
-                onSelect = {},
+                onSelect = {tipo=it},
                 modifier = Modifier
             )
 
