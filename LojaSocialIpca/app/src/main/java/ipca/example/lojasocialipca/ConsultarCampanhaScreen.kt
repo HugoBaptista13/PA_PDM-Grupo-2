@@ -2,6 +2,8 @@ package ipca.example.lojasocialipca
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -13,20 +15,16 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-
-data class CampanhaUi(
-    val id: Int,
-    val data: String,
-    val nome: String,
-    val tipo: String,
-    val descricao: String,
-    val concluida: Boolean
-)
+import ipca.example.lojasocialipca.helpers.criarData
+import ipca.example.lojasocialipca.helpers.format
+import ipca.example.lojasocialipca.models.Campanha
+import ipca.example.lojasocialipca.ui.theme.LojaSocialIpcaTheme
+import java.util.Calendar
 
 @Composable
 fun ConsultarCampanhaScreen(
-    campanhas: List<CampanhaUi>,
-    onFinalizarCampanha: (CampanhaUi) -> Unit = {}
+    campanhas: List<Campanha>,
+    onFinalizarCampanha: (Campanha) -> Unit = {}
 ) {
     Column(
         modifier = Modifier
@@ -58,13 +56,13 @@ fun ConsultarCampanhaScreen(
         }
 
         // LISTA DE CAMPANHAS
-        Column(
+        LazyColumn(
             modifier = Modifier
                 .weight(1f)
                 .padding(horizontal = 16.dp, vertical = 24.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            campanhas.forEach { campanha ->
+            items(campanhas) { campanha ->
                 CampanhaCard(
                     campanha = campanha,
                     onFinalizar = { onFinalizarCampanha(campanha) }
@@ -74,9 +72,10 @@ fun ConsultarCampanhaScreen(
     }
 }
 
+
 @Composable
 fun CampanhaCard(
-    campanha: CampanhaUi,
+    campanha: Campanha,
     onFinalizar: () -> Unit
 ) {
     val corFundo = if (campanha.concluida) Color(0xFF00B050) else Color(0xFFE0E0E0)
@@ -95,7 +94,7 @@ fun CampanhaCard(
             verticalAlignment = Alignment.CenterVertically
         ) {
             Text(
-                text = campanha.data,
+                text = campanha.dataInicio.format(),
                 fontSize = 24.sp,
                 fontWeight = FontWeight.Bold
             )
@@ -115,7 +114,7 @@ fun CampanhaCard(
             Column(
                 modifier = Modifier
                     .weight(1f)
-                    .clip(RoundedCornerShape(12.dp))
+                    .clip(RoundedCornerShape(8.dp))
                     .background(Color.White)
                     .padding(12.dp)
             ) {
@@ -133,7 +132,7 @@ fun CampanhaCard(
                     ),
                     shape = RoundedCornerShape(12.dp)
                 ) {
-                    Text("Finalizar")
+                    Text("Finalizar", fontSize = 20.sp, fontWeight = FontWeight.Black)
                 }
             }
         }
@@ -143,24 +142,66 @@ fun CampanhaCard(
 @Preview(showBackground = true, showSystemUi = true)
 @Composable
 fun ConsultarCampanhaScreenPreview() {
-    MaterialTheme {
+    val data1 = criarData(2025, Calendar.JANUARY, 12)
+    val data2 = criarData(2025, Calendar.DECEMBER, 5)
+
+
+    LojaSocialIpcaTheme {
         ConsultarCampanhaScreen(
             campanhas = listOf(
-                CampanhaUi(
-                    id = 1,
-                    data = "12/01/2026",
+                Campanha(
                     nome = "Recolha de Roupa",
-                    tipo = "Doação",
-                    descricao = "Roupa de inverno",
-                    concluida = false
+                    dataInicio = data1,
+                    dataFim = data1,
+                    descricao = "Recolha de roupas de inverno",
+                    tipo = "Interna",
+                    concluida = false,
+                    responsavel = ""
                 ),
-                CampanhaUi(
-                    id = 2,
-                    data = "05/12/2025",
+                Campanha(
                     nome = "Recolha de Alimentos",
-                    tipo = "Solidária",
-                    descricao = "Bens alimentares",
-                    concluida = true
+                    dataInicio = data2,
+                    dataFim = data2,
+                    descricao = "Recolha de bens alimentares",
+                    tipo = "Interna",
+                    concluida = true,
+                    responsavel = ""
+                ),
+                Campanha(
+                    nome = "Recolha de Alimentos",
+                    dataInicio = data2,
+                    dataFim = data2,
+                    descricao = "Recolha de bens alimentares",
+                    tipo = "Interna",
+                    concluida = false,
+                    responsavel = ""
+                ),
+                Campanha(
+                    nome = "Recolha de Alimentos",
+                    dataInicio = data2,
+                    dataFim = data2,
+                    descricao = "Recolha de bens alimentares",
+                    tipo = "Interna",
+                    concluida = false,
+                    responsavel = ""
+                ),
+                Campanha(
+                    nome = "Recolha de Alimentos",
+                    dataInicio = data2,
+                    dataFim = data2,
+                    descricao = "Recolha de bens alimentares",
+                    tipo = "Interna",
+                    concluida = false,
+                    responsavel = ""
+                ),
+                Campanha(
+                    nome = "Recolha de Alimentos",
+                    dataInicio = data2,
+                    dataFim = data2,
+                    descricao = "Recolha de bens alimentares",
+                    tipo = "Interna",
+                    concluida = false,
+                    responsavel = ""
                 )
             )
         )

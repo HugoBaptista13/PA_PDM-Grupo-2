@@ -2,15 +2,19 @@ package ipca.example.lojasocialipca
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.KeyboardArrowRight
 import androidx.compose.material3.*
+import androidx.compose.material3.CardDefaults
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -20,13 +24,11 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import ipca.example.lojasocialipca.helpers.criarData
+import ipca.example.lojasocialipca.helpers.format
 import ipca.example.lojasocialipca.models.Produto
 import ipca.example.lojasocialipca.ui.theme.LojaSocialIpcaTheme
-import java.text.SimpleDateFormat
 import java.util.Calendar
-import java.util.Date
-import java.util.Locale
-
 
 const val ESTADO_ATIVO = "Ativo"
 
@@ -36,10 +38,6 @@ fun List<Produto>.groupByTipoECategoria():
         .mapValues { (_, produtosDoTipo) ->
             produtosDoTipo.groupBy { it.categoria }
         }
-
-fun Date.format(): String =
-    SimpleDateFormat("dd/MM/yyyy", Locale.getDefault()).format(this)
-
 
 @Composable
 fun ProdutosFuncionarioScreen(
@@ -81,10 +79,30 @@ fun ProdutosFuncionarioScreen(
         }
 
         item {
-            Spacer(modifier = Modifier.height(24.dp))
+            Spacer(modifier = Modifier.height(8.dp))
             ButtonInserirProduto()
         }
     }
+}
+
+@Composable
+@Preview(showBackground = true)
+fun ProdutoItemPreview() {
+    val dataExemplo = criarData(2025, Calendar.MAY, 25)
+    val dataValidadeExemplo = criarData(2025, Calendar.DECEMBER, 18)
+    ProdutoItem(
+        Produto(
+            idProduto = "250520251",
+            campanha = "Teste",
+            nome = "Arroz 1Kg",
+            tipo = "Alimentar",
+            categoria = "Arroz",
+            validade = dataValidadeExemplo ,
+            estadoProduto = "Ativo",
+            dataEntrada = dataExemplo,
+            responsavel = "Teste",
+        )
+    )
 }
 
 @Composable
@@ -151,7 +169,7 @@ fun CategoriaExpandable(
                 Icon(
                     imageVector = if (expanded)
                         Icons.Filled.KeyboardArrowDown
-                    else Icons.Filled.KeyboardArrowRight,
+                    else Icons.AutoMirrored.Filled.KeyboardArrowRight,
                     contentDescription = null
                 )
             }
@@ -169,19 +187,67 @@ fun CategoriaExpandable(
 }
 
 @Composable
-fun ProdutoItem(produto: Produto) {
+fun ProdutoItem(
+    produto: Produto,
+    onRemover: (Produto) -> Unit = {}
+) {
     Card(
-        modifier = Modifier.fillMaxWidth(),
-        elevation = CardDefaults.cardElevation(2.dp)
+        modifier = Modifier
+            .fillMaxWidth()
+            .border(
+                width = 2.dp,
+                color = Color(0xFF00361F),
+                shape = RoundedCornerShape(8.dp)
+            ),
+        elevation = CardDefaults.cardElevation(2.dp),
+        colors = CardDefaults.cardColors(containerColor = Color(0xFFFFFFFF))
     ) {
-        Column(modifier = Modifier.padding(8.dp)) {
-            Text(
-                text = "ID-${produto.idProduto}-${produto.nome}",
-                fontWeight = FontWeight.Bold,
-                fontSize = 12.sp
-            )
-            Text("Data de validade: ${produto.validade.format()}", fontSize = 12.sp)
-            Text("Data de entrada: ${produto.dataEntrada.format()}", fontSize = 12.sp)
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(8.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Column(
+                modifier = Modifier.weight(1f)
+            ) {
+                Text(
+                    text = "ID-${produto.idProduto}-${produto.nome}",
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 12.sp
+                )
+                Text(
+                    "Data de validade: ${produto.validade.format()}",
+                    fontSize = 12.sp
+                )
+                Text(
+                    "Data de entrada: ${produto.dataEntrada.format()}",
+                    fontSize = 12.sp
+                )
+            }
+
+            IconButton(
+                onClick = { onRemover(produto) },
+                modifier = Modifier
+                    .size(40.dp)
+                    .padding(end = 12.dp)
+                    .background(
+                        color = Color.Red,
+                        shape = RoundedCornerShape(8.dp)
+                    )
+                    .border(
+                        width = 1.dp,
+                        color = Color(0xFF000000),
+                        shape = RoundedCornerShape(8.dp)
+                    )
+            ) {
+                Icon(
+                    imageVector = Icons.Filled.Delete,
+                    contentDescription = "Remover produto",
+                    tint = Color.White
+                )
+            }
         }
     }
 }
@@ -208,7 +274,7 @@ fun TipoLinha(
         ) {
             Text(titulo, fontWeight = FontWeight.SemiBold)
             Icon(
-                imageVector = if (expanded) Icons.Filled.KeyboardArrowDown else Icons.Filled.KeyboardArrowRight,
+                imageVector = if (expanded) Icons.Filled.KeyboardArrowDown else Icons.AutoMirrored.Filled.KeyboardArrowRight,
                 contentDescription = null
             )
         }
@@ -228,7 +294,7 @@ fun TopBar(onBack: () -> Unit) {
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             IconButton(onClick = onBack) {
-                Icon(Icons.Filled.ArrowBack, "Voltar", tint = Color.White)
+                Icon(Icons.AutoMirrored.Filled.ArrowBack, "Voltar", tint = Color.White)
             }
             Text(
                 text = "Loja Social",
@@ -273,13 +339,6 @@ fun ButtonInserirProduto() {
 @Preview(showBackground = true)
 @Composable
 fun PreviewProdutosFuncionarioScreen() {
-
-    fun criarData(ano: Int, mes: Int, dia: Int): Date =
-        Calendar.getInstance().apply {
-            set(ano, mes, dia, 0, 0, 0)
-            set(Calendar.MILLISECOND, 0)
-        }.time
-
     val dataExemplo = criarData(2025, Calendar.MAY, 25)
     val dataValidadeExemplo = criarData(2025, Calendar.DECEMBER, 18)
 

@@ -8,5 +8,6 @@ data class Campanha (
     var dataFim : Date? = null,
     var descricao : String? = null,
     var tipo : String,
+    var concluida : Boolean = false,
     var responsavel : String
 )
