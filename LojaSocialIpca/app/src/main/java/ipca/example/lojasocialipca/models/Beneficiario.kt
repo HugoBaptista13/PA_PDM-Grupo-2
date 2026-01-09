@@ -5,5 +5,6 @@ import java.util.Date
 data class Beneficiario(
     var candidaturas : List<String>,
     var email : String,
-    var dataAprovacao : Date
+    var dataAprovacao : Date? = null,
+    var estadoConta : String
 )
