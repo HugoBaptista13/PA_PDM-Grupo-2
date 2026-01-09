@@ -1,4 +1,4 @@
-package ipca.example.lojasocialipca
+package ipca.example.lojasocialipca.ui.components
 
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api

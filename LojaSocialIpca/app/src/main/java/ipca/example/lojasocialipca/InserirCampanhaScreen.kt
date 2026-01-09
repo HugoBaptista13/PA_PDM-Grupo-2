@@ -15,6 +15,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import ipca.example.lojasocialipca.ui.components.ComboBox
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -115,7 +116,7 @@ fun InserirCampanhaScreen(
                 label = "Tipo",
                 selected = tipo,
                 options = tipos,
-                onSelect = {tipo=it},
+                onSelect = { tipo = it },
                 modifier = Modifier
             )
 
