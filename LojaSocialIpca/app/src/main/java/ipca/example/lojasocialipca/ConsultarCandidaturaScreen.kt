@@ -75,7 +75,7 @@ fun ConsultarCandidaturaScreen(
 @Composable
 fun CandidaturaCard(
     candidatura: Candidatura,
-    onFinalizar: () -> Unit
+    onFinalizar: () -> Unit,
 ) {
     val corFundo = if (candidatura.estadoCandidatura == "Concluída") Color(0xFF00B050) else Color(0xFFE0E0E0)
     val textoEstado = if (candidatura.estadoCandidatura == "Concluída") "Concluída" else "Em fila de espera"
