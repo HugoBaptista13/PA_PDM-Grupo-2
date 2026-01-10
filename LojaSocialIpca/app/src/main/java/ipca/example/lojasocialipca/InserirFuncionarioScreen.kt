@@ -1,34 +1,50 @@
 package ipca.example.lojasocialipca
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Notifications
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import ipca.example.lojasocialipca.ui.components.ComboBox
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun InserirPedidoScreen(
+fun InserirFuncionarioScreen(
     onBack: () -> Unit = {},
-    onInserirPedido: () -> Unit = {}
+    onCriarFuncionario: () -> Unit = {}
 ) {
-    var tipo by remember { mutableStateOf("Produto Alimentar") }
-    var tipoExpanded by remember { mutableStateOf(false) }
-    val tipos = listOf("Produto Alimentar", "Produto de Higiene Pessoal", "Produto de Limpeza")
-    var descricao by remember { mutableStateOf("") }
-
-    // erro simples
+    var nome by remember {mutableStateOf("")}
+    var email by remember {mutableStateOf("")}
+    var password by remember {mutableStateOf("")}
+    // erros simples
     var erro by remember { mutableStateOf(false) }
 
     Column(
@@ -70,7 +86,7 @@ fun InserirPedidoScreen(
 
         // TÍTULO
         Text(
-            text = "Realizar Pedido",
+            text = "Inserir Funcionário",
             fontSize = 20.sp,
             fontWeight = FontWeight.Bold,
             modifier = Modifier.padding(top = 16.dp, start = 16.dp, end = 16.dp)
@@ -83,36 +99,58 @@ fun InserirPedidoScreen(
                 .padding(horizontal = 16.dp, vertical = 8.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-
-            ComboBox(
-                label = "Tipo",
-                selected = tipo,
-                options = tipos,
-                onSelect = { tipo = it },
-                modifier = Modifier
-            )
-
-            // Descrição do produto
+            // Nome
             Column {
-                Text("Descrição", fontSize = 14.sp, fontWeight = FontWeight.SemiBold)
+                Text("Nome", fontSize = 14.sp, fontWeight = FontWeight.SemiBold, modifier = Modifier.padding(vertical = 8.dp))
                 OutlinedTextField(
-                    value = descricao,
+                    value = nome,
                     onValueChange = {
-                        descricao = it
+                        nome = it
                         erro = false
                     },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(160.dp),
+                    modifier = Modifier.fillMaxWidth(),
                     label = {
                         Text(
-                            if (erro && descricao.isBlank()) "Preenche a descrição"
-                            else "Descrição do pedido"
+                            if (erro && nome.isBlank()) "Preenche o nome do funcionário"
+                            else "Nome do funcionário"
                         )
                     },
-                    isError = erro && descricao.isBlank(),
-                    singleLine = false,
-                    maxLines = 6
+                    isError = erro && nome.isBlank()
+                )
+
+                Text("Email", fontSize = 14.sp, fontWeight = FontWeight.SemiBold, modifier = Modifier.padding(vertical = 8.dp))
+                OutlinedTextField(
+                    value = email,
+                    onValueChange = {
+                        email = it
+                        erro = false
+                    },
+                    modifier = Modifier.fillMaxWidth(),
+                    label = {
+                        Text(
+                            if (erro && email.isBlank()) "Preenche o email do funcionário"
+                            else "Email do funcionário"
+                        )
+                    },
+                    isError = erro && email.isBlank()
+                )
+
+                Text("Password", fontSize = 14.sp, fontWeight = FontWeight.SemiBold, modifier = Modifier.padding(vertical = 8.dp))
+                OutlinedTextField(
+                    value = password,
+                    onValueChange = {
+                        password = it
+                        erro = false
+                    },
+                    modifier = Modifier.fillMaxWidth(),
+                    label = {
+                        Text(
+                            if (erro && password.isBlank()) "Preenche o password do funcionário"
+                            else "Password do funcionário"
+                        )
+                    },
+                    visualTransformation = PasswordVisualTransformation(),
+                    isError = erro && password.isBlank()
                 )
             }
         }
@@ -130,7 +168,7 @@ fun InserirPedidoScreen(
             )
         }
 
-        // BOTÃO INSERIR PEDIDO
+        // BOTÃO CRIAR FUNCIONARIO
         Row(
             modifier = Modifier
                 .fillMaxWidth()
@@ -139,9 +177,10 @@ fun InserirPedidoScreen(
         ) {
             Button(
                 onClick = {
-                    val valido = descricao.isNotBlank()
+                    val valido =
+                        nome.isNotBlank() && email.isNotBlank() && password.isNotBlank()
                     if (valido) {
-                        onInserirPedido()
+                        onCriarFuncionario()
                     } else {
                         erro = true
                     }
@@ -150,14 +189,18 @@ fun InserirPedidoScreen(
                 shape = RoundedCornerShape(12.dp),
                 modifier = Modifier.fillMaxWidth()
             ) {
-                Text("Realizar Pedido")
+                Text("Criar Funcionário")
             }
         }
     }
 }
 
-@Preview(showBackground = true, showSystemUi = true)
+
+@Preview(showBackground = true)
 @Composable
-fun InserirPedidoScreenPreview() {
-    InserirPedidoScreen()
+fun InserirFuncionarioScreenPreview() {
+    InserirFuncionarioScreen(
+        onBack = {},
+        onCriarFuncionario = {}
+    )
 }

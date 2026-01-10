@@ -2,6 +2,7 @@ package ipca.example.lojasocialipca
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -53,6 +54,30 @@ fun ConsultarCampanhaScreen(
                 fontSize = 16.sp,
                 fontWeight = FontWeight.Medium
             )
+        }
+
+
+        // BOTÃO CRIAR CAMPANHA
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(vertical = 16.dp),
+            horizontalArrangement = Arrangement.Center
+        ) {
+            Button(
+                onClick = { },
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = Color(0xFF006837)
+                ),
+                shape = RoundedCornerShape(12.dp)
+            ) {
+                Text(
+                    text = "Criar Campanha",
+                    fontSize = 20.sp,
+                    fontWeight = FontWeight.Black,
+                    color = Color.White
+                )
+            }
         }
 
         // LISTA DE CAMPANHAS
