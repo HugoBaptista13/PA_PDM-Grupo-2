@@ -11,8 +11,6 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.tooling.preview.Preview
-import ipca.example.lojasocialipca.CandidaturaPag1Screen
-import ipca.example.lojasocialipca.CandidaturaPag2Screen
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -28,8 +26,7 @@ fun LojaSocialApp() {
     // login        -> ecrã Login
     // register     -> ecrã Registo
     // mainCandidato-> ecrã principal do candidato
-    // candidatura1 -> primeira página da candidatura
-    // candidatura2 -> segunda página da candidatura
+    // candidatura -> página da candidatura
     var currentScreen by remember { mutableStateOf("login") }
 
     MaterialTheme {
@@ -72,24 +69,12 @@ fun LojaSocialApp() {
                     }
                 )
 
-                "candidatura1" -> CandidaturaPag1Screen(
+                "candidatura" -> CandidaturaScreen(
                     onBack = {
                         currentScreen = "mainCandidato"
-                    },
-                    onSeguinte = {
-                        currentScreen = "candidatura2"
                     }
                 )
 
-                "candidatura2" -> CandidaturaPag2Screen(
-                    onBack = {
-                        currentScreen = "mainCandidato"
-                    },
-                    onSeguinte = {
-                        // TODO: candidatura3 depois
-                        currentScreen = "mainCandidato"
-                    }
-                )
             }
         }
     }

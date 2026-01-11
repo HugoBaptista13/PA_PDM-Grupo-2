@@ -25,7 +25,6 @@ fun InserirCampanhaScreen(
 ) {
     var nome by remember { mutableStateOf("") }
     var tipo by remember { mutableStateOf("Campanha Interna") }
-    var tipoExpanded by remember { mutableStateOf(false) }
     val tipos = listOf("Campanha Interna", "Campanha Externa")
     var diaInicio by remember { mutableStateOf("") }
     var mesInicio by remember { mutableStateOf("") }
@@ -117,7 +116,7 @@ fun InserirCampanhaScreen(
                 selected = tipo,
                 options = tipos,
                 onSelect = { tipo = it },
-                modifier = Modifier
+                modifier = Modifier.fillMaxWidth()
             )
 
             // Data de início

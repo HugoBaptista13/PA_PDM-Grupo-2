@@ -16,6 +16,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
+import ipca.example.lojasocialipca.helpers.format
 import ipca.example.lojasocialipca.models.Entrega
 import java.text.SimpleDateFormat
 import java.util.*
@@ -112,13 +113,13 @@ fun ConsultarEntregasScreen(
                     }
 
                     Text(
-                        text = "Data Original: ${formatDate(entregaSelecionada!!.dataEntrega)}",
+                        text = "Data Original: ${entregaSelecionada!!.dataEntrega!!.format()}",
                         fontSize = 18.sp
                     )
 
                     Text(
                         text = "Nova Data: ${
-                            entregaSelecionada!!.dataRemarcacao?.let { formatDate(it) } ?: "--"
+                            entregaSelecionada!!.dataRemarcacao?.format() ?: "--"
                         }",
                         fontSize = 18.sp
                     )
@@ -191,14 +192,14 @@ fun EntregaCard(
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
             Text(
-                text = formatDate(entrega.dataEntrega),
+                text = entrega.dataEntrega!!.format(),
                 fontSize = 24.sp,
                 fontWeight = FontWeight.Bold
             )
             Column(horizontalAlignment = Alignment.End) {
                 Text(text = estadoTexto, fontSize = 18.sp, fontWeight = FontWeight.Bold)
                 entrega.dataRemarcacao?.let {
-                    Text(text = formatDate(it), fontSize = 16.sp, fontWeight = FontWeight.Bold)
+                    Text(text = it.format(), fontSize = 16.sp, fontWeight = FontWeight.Bold)
                 }
             }
         }
@@ -258,17 +259,6 @@ fun EntregaCard(
     }
 }
 
-/* ---------- UTIL ---------- */
-
-private val formatter = SimpleDateFormat("dd/MM/yyyy", Locale.getDefault())
-
-private fun formatDate(date: Date): String =
-    try {
-        formatter.format(date)
-    } catch (e: Exception) {
-        "Data inválida"
-    }
-
 /* ---------- PREVIEW ---------- */
 
 @Preview(showBackground = true, showSystemUi = true)
@@ -282,7 +272,11 @@ fun ConsultarEntregasScreenPreview() {
                     responsavel = "Funcionário A",
                     dataEntrega = Date(),
                     estadoEntrega = "PENDENTE",
-                    produtos = listOf("Produto alimentar")
+                    produtos = listOf("Produto alimentar"),
+                    dataSubmissao = Date(),
+                    dataRemarcacao = Date(),
+                    tipo = "",
+                    descricao = ""
                 ),
                 Entrega(
                     destinatario = "Maria",
@@ -290,14 +284,21 @@ fun ConsultarEntregasScreenPreview() {
                     dataEntrega = Date(),
                     dataRemarcacao = Date(),
                     estadoEntrega = "POR_REMARCAR",
-                    produtos = listOf("Arroz x 2", "Atum x 6")
+                    produtos = listOf("Arroz x 2", "Atum x 6"),
+                    dataSubmissao = Date(),
+                    tipo = "",
+                    descricao = ""
                 ),
                 Entrega(
                     destinatario = "Ana",
                     responsavel = "Funcionário C",
                     dataEntrega = Date(),
                     estadoEntrega = "ENTREGUE",
-                    produtos = listOf("Bolachas x 2")
+                    produtos = listOf("Bolachas x 2"),
+                    dataSubmissao = Date(),
+                    dataRemarcacao = Date(),
+                    tipo = "",
+                    descricao = ""
                 )
             )
         )
