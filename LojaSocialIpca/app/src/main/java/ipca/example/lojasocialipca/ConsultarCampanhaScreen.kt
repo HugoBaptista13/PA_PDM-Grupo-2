@@ -21,41 +21,23 @@ import ipca.example.lojasocialipca.helpers.format
 import ipca.example.lojasocialipca.models.Campanha
 import ipca.example.lojasocialipca.ui.theme.LojaSocialIpcaTheme
 import java.util.Calendar
+import ipca.example.lojasocialipca.ui.components.TopBar
 
 @Composable
 fun ConsultarCampanhaScreen(
     campanhas: List<Campanha>,
-    onFinalizarCampanha: (Campanha) -> Unit = {}
+    onFinalizarCampanha: (Campanha) -> Unit = {},
+    onCriarCampanha: ()-> Unit = {},
+    onBack: () -> Unit = {}
 ) {
     Column(
         modifier = Modifier
             .fillMaxSize()
             .background(Color.White)
     ) {
-        // TOP BAR
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(56.dp)
-                .background(Color(0xFF006837))
-                .padding(horizontal = 16.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.SpaceBetween
-        ) {
-            Text(
-                text = "Loja Social",
-                color = Color.White,
-                fontSize = 22.sp,
-                fontWeight = FontWeight.Bold
-            )
-            Text(
-                text = "IPCA",
-                color = Color.White,
-                fontSize = 16.sp,
-                fontWeight = FontWeight.Medium
-            )
-        }
 
+        // TOP BAR
+        TopBar(onBack)
 
         // BOTÃO CRIAR CAMPANHA
         Row(
@@ -65,7 +47,7 @@ fun ConsultarCampanhaScreen(
             horizontalArrangement = Arrangement.Center
         ) {
             Button(
-                onClick = { },
+                onClick = onCriarCampanha,
                 colors = ButtonDefaults.buttonColors(
                     containerColor = Color(0xFF006837)
                 ),
@@ -96,6 +78,7 @@ fun ConsultarCampanhaScreen(
         }
     }
 }
+
 
 
 @Composable

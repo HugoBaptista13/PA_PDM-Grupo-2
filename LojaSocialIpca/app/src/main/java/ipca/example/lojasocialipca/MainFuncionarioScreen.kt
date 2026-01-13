@@ -22,13 +22,16 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import ipca.example.lojasocialipca.ui.theme.LojaSocialIpcaTheme
+import ipca.example.lojasocialipca.ui.components.BottomBar
 
 @Composable
 fun MainFuncionarioScreen(
     onProdutos: () -> Unit = {},
     onCampanhas: () -> Unit = {},
     onCandidaturas: () -> Unit = {},
-    onEntregas: () -> Unit = {}
+    onEntregas: () -> Unit = {},
+    onLogout: () -> Unit = {},
+    onPerfil: () -> Unit = {}
 ) {
     Column(
         modifier = Modifier
@@ -140,7 +143,12 @@ fun MainFuncionarioScreen(
             }
 
             }
+        BottomBar (
+            onLogout = onLogout,
+            onPerfil= onPerfil
+        )
         }
+
 
 }
 

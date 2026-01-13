@@ -5,6 +5,8 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -24,7 +26,7 @@ import java.util.Calendar
 @Composable
 fun ConsultarCandidaturaScreen(
     candidaturas: List<Candidatura>,
-    onFinalizarCandidatura: (Candidatura) -> Unit = {}
+    onBack: () -> Unit = {}
 ) {
     Column(
         modifier = Modifier
@@ -38,20 +40,16 @@ fun ConsultarCandidaturaScreen(
                 .height(56.dp)
                 .background(Color(0xFF006837))
                 .padding(horizontal = 16.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.SpaceBetween
+            verticalAlignment = Alignment.CenterVertically
         ) {
+            IconButton(onClick = onBack) {
+                Icon(Icons.AutoMirrored.Filled.ArrowBack, null, tint = Color.White)
+            }
             Text(
-                text = "Loja Social",
+                "Loja Social",
                 color = Color.White,
-                fontSize = 22.sp,
+                fontSize = 18.sp,
                 fontWeight = FontWeight.Bold
-            )
-            Text(
-                text = "IPCA",
-                color = Color.White,
-                fontSize = 16.sp,
-                fontWeight = FontWeight.Medium
             )
         }
 
@@ -64,8 +62,7 @@ fun ConsultarCandidaturaScreen(
         ) {
             items(candidaturas) { candidatura ->
                 CandidaturaCard(
-                    candidatura = candidatura,
-                    onFinalizar = { onFinalizarCandidatura(candidatura) }
+                    candidatura = candidatura
                 )
             }
         }
@@ -75,7 +72,6 @@ fun ConsultarCandidaturaScreen(
 @Composable
 fun CandidaturaCard(
     candidatura: Candidatura,
-    onFinalizar: () -> Unit,
 ) {
     val corFundo = if (candidatura.estadoCandidatura == "Concluída") Color(0xFF00B050) else Color(0xFFE0E0E0)
     val textoEstado = if (candidatura.estadoCandidatura == "Concluída") "Concluída" else "Em fila de espera"

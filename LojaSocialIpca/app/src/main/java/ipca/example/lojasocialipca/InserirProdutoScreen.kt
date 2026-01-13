@@ -17,6 +17,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import ipca.example.lojasocialipca.ui.components.TopBar
 
 @Composable
 fun ComboBox(
@@ -70,7 +71,12 @@ fun ComboBox(
 }
 
 @Composable
-fun InserirProdutoScreen() {
+fun InserirProdutoScreen(
+    onBack: () -> Unit = {},
+    onInsirir: () -> Unit = {},
+    onCancelar: () -> Unit = {}
+    ) {
+
     var nomeProduto by remember { mutableStateOf("") }
     var categoria by remember { mutableStateOf("") }
     var dia by remember { mutableStateOf("") }
@@ -93,26 +99,8 @@ fun InserirProdutoScreen() {
             .fillMaxSize()
             .background(Color.White)
     ) {
-        // TOP BAR
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(56.dp)
-                .background(Color(0xFF006837))
-                .padding(horizontal = 16.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.SpaceBetween
-        ) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Voltar", tint = Color.White)
-                Spacer(Modifier.width(8.dp))
-                Text("Loja Social", color = Color.White, fontSize = 18.sp, fontWeight = FontWeight.Bold)
-            }
-            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                Icon(Icons.Filled.Notifications, contentDescription = "Notificações", tint = Color.White)
-                Text("IPCA", color = Color.White, fontSize = 16.sp, fontWeight = FontWeight.Medium)
-            }
-        }
+
+        TopBar(onBack)
 
         Column(
             modifier = Modifier
@@ -223,7 +211,7 @@ fun InserirProdutoScreen() {
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Button(
-                    onClick = {},
+                    onClick = {onInsirir},
                     colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF037C49)),
                     modifier = Modifier
                         .weight(1f)
@@ -233,7 +221,7 @@ fun InserirProdutoScreen() {
                     Text("Inserir", fontSize = 18.sp, fontWeight = FontWeight.Bold, color = Color.White)
                 }
                 Button(
-                    onClick = {},
+                    onClick = {onCancelar},
                     colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF9F0D00)),
                     modifier = Modifier
                         .weight(1f)

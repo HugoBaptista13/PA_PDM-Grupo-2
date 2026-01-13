@@ -11,6 +11,12 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.tooling.preview.Preview
+import ipca.example.lojasocialipca.models.Candidatura
+import ipca.example.lojasocialipca.ui.AvaliarCandidaturaScreen
+import ipca.example.lojasocialipca.ui.ConsultarCandidaturaFuncionarioScreen
+import ipca.example.lojasocialipca.ui.ConsultarEntregasScreen
+import kotlin.Unit
+
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -26,7 +32,8 @@ fun LojaSocialApp() {
     // login        -> ecrã Login
     // register     -> ecrã Registo
     // mainCandidato-> ecrã principal do candidato
-    // candidatura -> página da candidatura
+    // candidatura1 -> primeira página da candidatura
+    // candidatura2 -> segunda página da candidatura
     var currentScreen by remember { mutableStateOf("login") }
 
     MaterialTheme {
@@ -34,7 +41,7 @@ fun LojaSocialApp() {
             when (currentScreen) {
                 "login" -> LoginScreen(
                     onLoginSuccess = {
-                        currentScreen = "mainCandidato"
+                        currentScreen = "mainFuncionario"
                     },
                     onGoToRegister = {
                         currentScreen = "register"
@@ -52,29 +59,180 @@ fun LojaSocialApp() {
 
                 "mainCandidato" -> MainCandidatoScreen(
                     onFazerCandidatura = {
-                        currentScreen = "candidatura1"
+                        currentScreen = "candidatura"
                     },
                     onAcompanharCandidatura = {
-                        // TODO: ligar ao ecrã de acompanhamento
+                        currentScreen = "consultarCandidatura"
                     },
                     onLogout = {
                         currentScreen = "login"
                     },
                     onHome = {
-                        // por agora fica no próprio mainCandidato
                         currentScreen = "mainCandidato"
                     },
                     onPerfil = {
-                        // TODO: quando existir ecrã de perfil
+                        currentScreen = ""
                     }
                 )
 
                 "candidatura" -> CandidaturaScreen(
+                    onCandidaturaSuccess = {
+                        currentScreen = "consultarCandidatura"
+                    },
+                )
+
+                "consultarCandidatura" -> ConsultarCandidaturaScreen(
+                    candidaturas = emptyList(),
                     onBack = {
                         currentScreen = "mainCandidato"
+                    },
+                )
+
+                "mainBeneficiario" -> MainBeneficiarioScreen (
+                    onFazerPedido = {
+                        currentScreen = "inserirPedido"
+                    },
+                    onAcompanharPedido = {
+                        currentScreen = "consultarPedido"
+                    },
+                    onLogout = {
+                        currentScreen = "login"
+                    },
+                    onPerfil = {
+                        currentScreen = "perfilBeneficiario"
                     }
                 )
 
+                "perfilBeneficiario" -> PerfilBeneficiarioScreen(
+                    nome = "",
+                    numAluno = 12,
+                    curso = "",
+                    grau = "",
+                    alertas = emptyList(),
+                    onMudarPassword = {}
+                )
+
+                "inserirPedido" -> InserirPedidoScreen (
+                    onBack = {
+                        currentScreen = "mainBeneficiario"
+                    },
+                    onInserirPedido = {
+                        currentScreen = "consultarPedido"
+                    }
+                )
+
+                "consultarPedido" -> ConsultarPedidoScreen(
+                    pedidos = emptyList(),
+                    onBack = {
+                        currentScreen = "mainBenficiario"
+                    }
+                )
+
+                "mainFuncionario" -> MainFuncionarioScreen (
+                    onProdutos = {
+                        currentScreen = "produtosFuncionario"
+                    },
+                    onCampanhas = {
+                        currentScreen = "consultarCampanha"
+                    },
+                    onCandidaturas = {
+                        currentScreen = "funcionarioCandidatura"
+                    },
+                    onEntregas = {
+                        currentScreen = "consultarEntrega"
+                    },
+                    onLogout = {
+                        currentScreen = "login"
+                    },
+                    onPerfil = {
+                        currentScreen = "perfilFuncionario"
+                    }
+                )
+
+                "perfilFuncionario" -> PerfilFuncionarioScreen(
+                    nome = "",
+                    email = "",
+                    alertas = emptyList(),
+                    onMudarPassword = {}
+                )
+
+                "produtosFuncionario" -> ProdutosFuncionarioScreen(
+                    produtos = emptyList(),
+                    onBack = {
+                        currentScreen = "mainFuncionario"
+                    },
+                    onInserirProduto = {
+                        currentScreen = "inserirProduto"
+                    }
+                )
+
+                "inserirProduto" -> InserirProdutoScreen(
+                    onBack = {
+                        currentScreen = "produtosFuncionario"
+                    },
+                    onCancelar = {
+                        currentScreen = "produtosFuncionario"
+                    }
+                )
+
+                "consultarCampanha" -> ConsultarCampanhaScreen(
+                    campanhas = emptyList(),
+                    onCriarCampanha = {
+                        currentScreen = "inserirCampanha"
+                    }
+                )
+
+                "inserirCampanha" -> InserirCampanhaScreen(
+                    onBack = {
+                        currentScreen = "consultarCampanha"
+                    },
+                    onCriarCampanha = {
+                        currentScreen = "consultarCampanha"
+                    }
+                )
+
+                "funcionarioCandidatura" -> ConsultarCandidaturaFuncionarioScreen(
+                    candidaturas = emptyList(),
+                    onBack = {
+                        currentScreen = "mainFuncionario"
+                    },
+                    onAvaliar = {
+                        currentScreen = "avaliarCandidatura"
+                    }
+                )
+
+                "avaliarCandidatura" -> AvaliarCandidaturaScreen(
+                    candidatura = Candidatura(),
+                    onBack = {
+                        currentScreen = "funcionarioCandidatura"
+                    },
+                    onAprovar = {
+                        currentScreen = "funcionarioCandidatura"
+                    },
+                    onReprovar = {
+                        currentScreen = "funcionarioCandidatura"
+                    }
+                )
+
+                "consultarEntrega" -> ConsultarEntregasScreen(
+                    entregas = emptyList(),
+                    onBack = {
+                        currentScreen = "mainFuncionario"
+                    },
+                    onMarcar = {
+                        currentScreen = "marcarEntrega"
+                    }
+                )
+
+                "marcarEntrega" -> MarcarEntregaScreen(
+                    produtos = emptyList(),
+                    onBack = {
+                        currentScreen = "consultarEntrega"
+                    },
+                    onConfirmar = {
+                        currentScreen = "consultarEntrega"
+                    }
+                )
             }
         }
     }

@@ -47,7 +47,7 @@ import java.util.Date
 
 @Composable
 fun CandidaturaScreen(
-    onBack: () -> Unit = {}
+    onCandidaturaSuccess: () -> Unit = {}
 ) {
     var step by remember { mutableStateOf(1) }
 
@@ -130,6 +130,7 @@ fun CandidaturaScreen(
                     if (step < 3) {
                         step++
                     } else {
+                        onCandidaturaSuccess()
                         candidatura.dataSubmissao = Date()
                         candidatura.estadoCandidatura = "Submetida"
 
@@ -145,10 +146,6 @@ fun CandidaturaScreen(
         }
     }
 }
-
-
-
-
 
 @Composable
 fun CandidaturaDadosPessoais(c: Candidatura) {
@@ -394,8 +391,6 @@ fun CandidaturaDadosAcademicos(c: Candidatura) {
     }
 }
 
-
-
 @Composable
 fun CandidaturaApoiosExtras(c: Candidatura) {
 
@@ -491,10 +486,6 @@ fun CandidaturaApoiosExtras(c: Candidatura) {
         }
     }
 }
-
-
-
-
 
 @Preview(showBackground = true)
 @Composable
