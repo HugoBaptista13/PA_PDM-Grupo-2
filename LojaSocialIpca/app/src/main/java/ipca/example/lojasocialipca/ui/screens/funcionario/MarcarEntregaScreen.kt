@@ -86,109 +86,10 @@ class LinhaEntregaProduto {
 }
 
 @Composable
-fun TESTE() {
-    val dataExemplo = criarData(2025, Calendar.MAY, 25)
-    val dataValidadeExemplo = criarData(2025, Calendar.DECEMBER, 18)
-
-    MarcarEntregaScreen(
-        produtos = listOf(
-            Produto(
-                idProduto = "250520251",
-                campanha = "Teste",
-                nome = "Arroz 1Kg",
-                tipo = "Alimentar",
-                categoria = "Arroz",
-                validade = dataValidadeExemplo ,
-                estadoProduto = "Ativo",
-                dataEntrada = dataExemplo,
-                responsavel = "Teste",
-            ),
-            Produto(
-                idProduto = "250520252",
-                campanha = "Teste",
-                nome = "Arroz 1Kg",
-                tipo = "Alimentar",
-                categoria = "Arroz",
-                validade = dataValidadeExemplo ,
-                estadoProduto = "Ativo",
-                dataEntrada = dataExemplo,
-                responsavel = "Teste",
-            ),
-            Produto(
-                idProduto = "250520253",
-                campanha = "Teste",
-                nome = "Arroz 1Kg",
-                tipo = "Alimentar",
-                categoria = "Arroz",
-                validade = dataValidadeExemplo ,
-                estadoProduto = "Ativo",
-                dataEntrada = dataExemplo,
-                responsavel = "Teste",
-            ),
-            Produto(
-                idProduto = "250520251",
-                campanha = "Teste",
-                nome = "Lata de Atum natural",
-                tipo = "Alimentar",
-                categoria = "Enlatados",
-                validade = dataValidadeExemplo ,
-                estadoProduto = "Ativo",
-                dataEntrada = dataExemplo,
-                responsavel = "Teste",
-            ),
-            Produto(
-                idProduto = "250520252",
-                campanha = "Teste",
-                nome = "Lata de Atum natural",
-                tipo = "Alimentar",
-                categoria = "Enlatados",
-                validade = dataValidadeExemplo ,
-                estadoProduto = "Ativo",
-                dataEntrada = dataExemplo,
-                responsavel = "Teste",
-            ),
-            Produto(
-                idProduto = "250520251",
-                campanha = "Teste",
-                nome = "Arroz 1Kg",
-                tipo = "Alimentar",
-                categoria = "Arroz",
-                validade = dataValidadeExemplo ,
-                estadoProduto = "Desativo",
-                dataEntrada = dataExemplo,
-                responsavel = "Teste",
-            ),
-            Produto(
-                idProduto = "250520251",
-                campanha = "Teste",
-                nome = "Lixivia 1L",
-                tipo = "Limpeza",
-                categoria = "Lixivia",
-                validade = dataValidadeExemplo ,
-                estadoProduto = "Ativo",
-                dataEntrada = dataExemplo,
-                responsavel = "Teste",
-            ),
-            Produto(
-                idProduto = "250520251",
-                campanha = "Teste",
-                nome = "Sabão líquido 1L",
-                tipo = "Higiene Pessoal",
-                categoria = "Sabão",
-                validade = dataValidadeExemplo ,
-                estadoProduto = "Ativo",
-                dataEntrada = dataExemplo,
-                responsavel = "Teste",
-            )
-        ),
-        onBack = {}
-    )
-}
-
-@Composable
 fun MarcarEntregaScreen(
     produtos: List<Produto>,
-    onBack: () -> Unit = {}
+    onBack: () -> Unit = {},
+    onConfirmar: () -> Unit = {}
 ) {
     val linhas = remember { mutableStateListOf<LinhaEntregaProduto>() }
 
@@ -376,7 +277,7 @@ fun MarcarEntregaScreen(
             }
 
             Button(
-                onClick = { /* TODO: ação de confirmar */ },
+                onClick = onConfirmar,
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(56.dp),

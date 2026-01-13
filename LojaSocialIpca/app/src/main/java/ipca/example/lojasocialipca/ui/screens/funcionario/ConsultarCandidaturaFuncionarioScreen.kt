@@ -16,11 +16,13 @@ import androidx.compose.ui.unit.sp
 import ipca.example.lojasocialipca.models.Candidatura
 import java.text.SimpleDateFormat
 import java.util.*
+import ipca.example.lojasocialipca.ui.components.TopBar
 
 @Composable
 fun ConsultarCandidaturaFuncionarioScreen(
     candidaturas: List<Candidatura>,
-    onAvaliar: (Candidatura) -> Unit = {}
+    onAvaliar: (Candidatura) -> Unit = {},
+    onBack: () -> Unit = {}
 ) {
     Column(
         modifier = Modifier
@@ -28,28 +30,7 @@ fun ConsultarCandidaturaFuncionarioScreen(
             .background(Color.White)
     ) {
         // TOP BAR
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(56.dp)
-                .background(Color(0xFF006837))
-                .padding(horizontal = 16.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.SpaceBetween
-        ) {
-            Text(
-                text = "Loja Social",
-                color = Color.White,
-                fontSize = 22.sp,
-                fontWeight = FontWeight.Bold
-            )
-            Text(
-                text = "IPCA",
-                color = Color.White,
-                fontSize = 16.sp,
-                fontWeight = FontWeight.Medium
-            )
-        }
+        TopBar(onBack)
 
         Column(
             modifier = Modifier

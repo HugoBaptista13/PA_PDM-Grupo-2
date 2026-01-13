@@ -52,6 +52,8 @@ dependencies {
 
     implementation(libs.androidx.compose.foundation.layout)
     implementation(libs.androidx.material3)
+    implementation(libs.androidx.ui)
+    implementation(libs.androidx.compose.foundation)
     dependencies {
         implementation(platform("com.google.firebase:firebase-bom:34.7.0"))
         implementation("com.google.firebase:firebase-firestore")

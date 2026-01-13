@@ -3,6 +3,8 @@ package ipca.example.lojasocialipca.ui.screens.beneficiario
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -26,7 +28,8 @@ data class PedidoUi(
 fun ConsultarPedidoScreen(
     pedidos: List<PedidoUi>,
     onRealizaEntrega: (PedidoUi) -> Unit = {},
-    onRealizaRemarcar: (PedidoUi) -> Unit = {}
+    onRealizaRemarcar: (PedidoUi) -> Unit = {},
+    onBack: () -> Unit = {}
 ) {
     Column(
         modifier = Modifier
@@ -40,20 +43,16 @@ fun ConsultarPedidoScreen(
                 .height(56.dp)
                 .background(Color(0xFF006837))
                 .padding(horizontal = 16.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.SpaceBetween
+            verticalAlignment = Alignment.CenterVertically
         ) {
+            IconButton(onClick = onBack) {
+                Icon(Icons.AutoMirrored.Filled.ArrowBack, null, tint = Color.White)
+            }
             Text(
-                text = "Loja Social",
+                "Loja Social",
                 color = Color.White,
-                fontSize = 22.sp,
+                fontSize = 18.sp,
                 fontWeight = FontWeight.Bold
-            )
-            Text(
-                text = "IPCA",
-                color = Color.White,
-                fontSize = 16.sp,
-                fontWeight = FontWeight.Medium
             )
         }
 

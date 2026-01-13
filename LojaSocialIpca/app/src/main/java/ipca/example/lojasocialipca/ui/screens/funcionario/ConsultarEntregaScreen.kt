@@ -19,13 +19,15 @@ import androidx.compose.ui.window.Dialog
 import ipca.example.lojasocialipca.helpers.format
 import ipca.example.lojasocialipca.models.Entrega
 import java.util.*
+import ipca.example.lojasocialipca.ui.components.TopBar
 
 @Composable
 fun ConsultarEntregasScreen(
     entregas: List<Entrega>,
     onRemarcarConfirmado: (Entrega) -> Unit = {},
     onRemarcarRejeitado: (Entrega) -> Unit = {},
-    onOutraAcao: (Entrega) -> Unit = {}
+    onMarcar: (Entrega) -> Unit = {},
+    onBack: () -> Unit = {}
 ) {
 
     var mostrarDialog by remember { mutableStateOf(false) }
@@ -38,28 +40,7 @@ fun ConsultarEntregasScreen(
     ) {
 
         // TOP BAR
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(56.dp)
-                .background(Color(0xFF006837))
-                .padding(horizontal = 16.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.SpaceBetween
-        ) {
-            Text(
-                text = "Loja Social",
-                color = Color.White,
-                fontSize = 22.sp,
-                fontWeight = FontWeight.Bold
-            )
-            Text(
-                text = "IPCA",
-                color = Color.White,
-                fontSize = 16.sp,
-                fontWeight = FontWeight.Bold
-            )
-        }
+        TopBar(onBack)
 
         // LISTA
         Column(
@@ -75,7 +56,7 @@ fun ConsultarEntregasScreen(
                             entregaSelecionada = entrega
                             mostrarDialog = true
                         } else {
-                            onOutraAcao(entrega)
+                            onMarcar(entrega)
                         }
                     },
                     onCancelar = { onRemarcarRejeitado(entrega) }

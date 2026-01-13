@@ -29,6 +29,7 @@ import ipca.example.lojasocialipca.helpers.format
 import ipca.example.lojasocialipca.models.Produto
 import ipca.example.lojasocialipca.ui.theme.LojaSocialIpcaTheme
 import java.util.Calendar
+import ipca.example.lojasocialipca.ui.components.TopBar
 
 const val ESTADO_ATIVO = "Ativo"
 
@@ -42,6 +43,7 @@ fun List<Produto>.groupByTipoECategoria():
 @Composable
 fun ProdutosFuncionarioScreen(
     produtos: List<Produto>,
+    onInserirProduto: () -> Unit = {},
     onBack: () -> Unit = {}
 ) {
     val produtosAtivos = remember(produtos) {
@@ -80,7 +82,31 @@ fun ProdutosFuncionarioScreen(
 
         item {
             Spacer(modifier = Modifier.height(8.dp))
-            ButtonInserirProduto()
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(16.dp),
+                horizontalArrangement = Arrangement.Center
+            ) {
+                Button(
+                    onClick = onInserirProduto,
+                    modifier = Modifier
+                        .height(90.dp)
+                        .fillMaxWidth(0.6f),
+                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF006837)),
+                    shape = RoundedCornerShape(8.dp)
+                ) {
+                    Image(
+                        painter = painterResource(R.drawable.ic_mais),
+                        contentDescription = "mais",
+                        modifier = Modifier
+                            .height(64.dp)   // ajusta se quiseres maior
+                    )
+                    Text("Inserir Produto", color = Color.White, fontWeight = FontWeight.Bold)
+
+                }
+
+            }
         }
     }
 }
@@ -278,61 +304,6 @@ fun TipoLinha(
                 contentDescription = null
             )
         }
-    }
-}
-
-@Composable
-fun TopBar(onBack: () -> Unit) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .height(56.dp)
-            .background(Color(0xFF006837))
-            .padding(horizontal = 16.dp),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.SpaceBetween
-    ) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            IconButton(onClick = onBack) {
-                Icon(Icons.AutoMirrored.Filled.ArrowBack, "Voltar", tint = Color.White)
-            }
-            Text(
-                text = "Loja Social",
-                color = Color.White,
-                fontSize = 18.sp,
-                fontWeight = FontWeight.Bold
-            )
-        }
-        Text("IPCA", color = Color.White, fontSize = 16.sp, fontWeight = FontWeight.Medium)
-    }
-}
-
-@Composable
-fun ButtonInserirProduto() {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(16.dp),
-        horizontalArrangement = Arrangement.Center
-    ) {
-        Button(
-            onClick = { /* TODO: navega para ecrã Inserir Produto */ },
-            modifier = Modifier
-                .height(90.dp)
-                .fillMaxWidth(0.6f),
-            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF006837)),
-            shape = RoundedCornerShape(8.dp)
-        ) {
-            Image(
-                painter = painterResource(R.drawable.ic_mais),
-                contentDescription = "mais",
-                modifier = Modifier
-                    .height(64.dp)   // ajusta se quiseres maior
-            )
-            Text("Inserir Produto", color = Color.White, fontWeight = FontWeight.Bold)
-
-        }
-
     }
 }
 
