@@ -1,4 +1,4 @@
-package ipca.example.lojasocialipca.ui
+package ipca.example.lojasocialipca.ui.screens.funcionario
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
@@ -18,7 +18,6 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import ipca.example.lojasocialipca.helpers.format
 import ipca.example.lojasocialipca.models.Entrega
-import java.text.SimpleDateFormat
 import java.util.*
 
 @Composable
@@ -218,18 +217,39 @@ fun EntregaCard(
                     .background(Color.White)
                     .padding(12.dp)
             ) {
-                entrega.produtos.forEach {
-                    Text(text = it, fontSize = 14.sp)
+
+                if (entrega.estadoEntrega == "PENDENTE") {
+
+                    Text(
+                        text = "Tipo: ${entrega.tipo}",
+                        fontSize = 14.sp,
+                        fontWeight = FontWeight.Normal
+                    )
+
+                    Spacer(modifier = Modifier.height(4.dp))
+
+                    Text(
+                        text = entrega.descricao,
+                        fontSize = 12.sp
+                    )
+
+                } else {
+
+                    entrega.produtos.forEach { produto ->
+                        Text(
+                            text = produto,
+                            fontSize = 14.sp
+                        )
+                    }
                 }
             }
-
-            Spacer(modifier = Modifier.width(12.dp))
 
             val botaoModifier = Modifier
                 .width(108.dp)
                 .height(44.dp)
 
             if (botaoTexto != null) {
+                Spacer(modifier = Modifier.width(12.dp))
                 Column(
                     verticalArrangement = Arrangement.spacedBy(8.dp),
                     horizontalAlignment = Alignment.CenterHorizontally
@@ -254,7 +274,6 @@ fun EntregaCard(
                     }
                 }
             }
-
         }
     }
 }
@@ -268,6 +287,7 @@ fun ConsultarEntregasScreenPreview() {
         ConsultarEntregasScreen(
             entregas = listOf(
                 Entrega(
+                    numEntrega = 1,
                     destinatario = "João",
                     responsavel = "Funcionário A",
                     dataEntrega = Date(),
@@ -275,10 +295,11 @@ fun ConsultarEntregasScreenPreview() {
                     produtos = listOf("Produto alimentar"),
                     dataSubmissao = Date(),
                     dataRemarcacao = Date(),
-                    tipo = "",
-                    descricao = ""
+                    tipo = "Produto Alimentar",
+                    descricao = "Eu queria um cabaz que durasse cerca de um mês."
                 ),
                 Entrega(
+                    numEntrega = 2,
                     destinatario = "Maria",
                     responsavel = "Funcionário B",
                     dataEntrega = Date(),
@@ -290,6 +311,7 @@ fun ConsultarEntregasScreenPreview() {
                     descricao = ""
                 ),
                 Entrega(
+                    numEntrega = 3,
                     destinatario = "Ana",
                     responsavel = "Funcionário C",
                     dataEntrega = Date(),

@@ -1,4 +1,4 @@
-package ipca.example.lojasocialipca
+package ipca.example.lojasocialipca.ui.screens.beneficiario
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -31,9 +31,9 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
 @Composable
-fun MainCandidatoScreen(
-    onFazerCandidatura: () -> Unit = {},
-    onAcompanharCandidatura: () -> Unit = {},
+fun MainBeneficiarioScreen(
+    onFazerPedido: () -> Unit = {},
+    onAcompanharPedido: () -> Unit = {},
     onLogout: () -> Unit = {},
     onHome: () -> Unit = {},
     onPerfil: () -> Unit = {}
@@ -93,7 +93,7 @@ fun MainCandidatoScreen(
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Button(
-                onClick = onFazerCandidatura,
+                onClick = onFazerPedido,
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(60.dp),
@@ -103,7 +103,7 @@ fun MainCandidatoScreen(
                 shape = RoundedCornerShape(12.dp)
             ) {
                 Text(
-                    text = "Fazer Candidatura",
+                    text = "Fazer Pedido",
                     color = Color.White,
                     fontSize = 16.sp
                 )
@@ -112,7 +112,7 @@ fun MainCandidatoScreen(
             Spacer(modifier = Modifier.height(24.dp))
 
             Button(
-                onClick = onAcompanharCandidatura,
+                onClick = onAcompanharPedido,
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(60.dp),
@@ -122,7 +122,7 @@ fun MainCandidatoScreen(
                 shape = RoundedCornerShape(12.dp)
             ) {
                 Text(
-                    text = "Acompanhar Candidatura",
+                    text = "Acompanhar Pedido",
                     color = Color.White,
                     fontSize = 16.sp
                 )
@@ -195,6 +195,6 @@ fun MainCandidatoScreen(
 
 @Preview(showBackground = true, showSystemUi = true)
 @Composable
-fun MaincandidatoPreview() {
-    MainCandidatoScreen ()
+fun MainBeneficiarioPreview() {
+    MainBeneficiarioScreen ()
 }

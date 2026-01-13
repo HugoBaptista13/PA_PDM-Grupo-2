@@ -1,4 +1,4 @@
-package ipca.example.lojasocialipca
+package ipca.example.lojasocialipca.ui.screens.funcionario
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*

@@ -3,6 +3,7 @@ package ipca.example.lojasocialipca.models
 import java.util.Date
 
 data class Entrega(
+    var numEntrega : Int,
     var destinatario : String,
     var responsavel : String? = null,
     var dataSubmissao : Date,

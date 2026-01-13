@@ -11,6 +11,10 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.tooling.preview.Preview
+import ipca.example.lojasocialipca.ui.screens.LoginScreen
+import ipca.example.lojasocialipca.ui.screens.RegisterScreen
+import ipca.example.lojasocialipca.ui.screens.candidato.CandidaturaScreen
+import ipca.example.lojasocialipca.ui.screens.candidato.MainCandidatoScreen
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
