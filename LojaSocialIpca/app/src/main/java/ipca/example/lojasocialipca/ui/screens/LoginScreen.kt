@@ -28,6 +28,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import ipca.example.lojasocialipca.AppModule
 import ipca.example.lojasocialipca.ui.theme.LojaSocialIpcaTheme
 
 
@@ -88,7 +89,15 @@ fun LoginScreen(
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     Button(
-                        onClick = { onLoginSuccess() },
+                        onClick = {
+                            AppModule.auth.signInWithEmailAndPassword(email, password)
+                                .addOnSuccessListener {
+                                    onLoginSuccess()
+                                }
+                                .addOnFailureListener {
+                                    println("Erro no login: ${it.message}")
+                                }
+                        },
                         modifier = Modifier.weight(1f),
                         colors = ButtonDefaults.buttonColors(
                             containerColor = Color(0xFF006837)

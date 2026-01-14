@@ -3,6 +3,7 @@ package ipca.example.lojasocialipca.models
 import java.util.Date
 
 data class Candidatura(
+    var idCandidatura: String = "",
     var anoLetivo : String = "",
     var nome : String = "",
     var cartaoCidadao : String = "",

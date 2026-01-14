@@ -1,4 +1,4 @@
-package ipca.example.lojasocialipca.ui.screens.funcionario
+package ipca.example.lojasocialipca.ui.screens.beneficiario
 
 
 import androidx.compose.foundation.background

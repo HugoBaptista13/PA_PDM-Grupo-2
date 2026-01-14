@@ -3,16 +3,26 @@ package ipca.example.lojasocialipca.ui.screens.funcionario
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.mutableStateListOf
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -21,9 +31,14 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import ipca.example.lojasocialipca.AppModule
 import ipca.example.lojasocialipca.R
-import ipca.example.lojasocialipca.ui.theme.LojaSocialIpcaTheme
+import ipca.example.lojasocialipca.helpers.format
+import ipca.example.lojasocialipca.models.Notificacao
 import ipca.example.lojasocialipca.ui.components.BottomBar
+import ipca.example.lojasocialipca.ui.components.TopBar
+import ipca.example.lojasocialipca.ui.theme.LojaSocialIpcaTheme
+import java.util.Date
 
 @Composable
 fun MainFuncionarioScreen(
@@ -34,43 +49,46 @@ fun MainFuncionarioScreen(
     onLogout: () -> Unit = {},
     onPerfil: () -> Unit = {}
 ) {
+    val uid = AppModule.auth.currentUser?.uid
+
+    val notificacoes = remember { mutableStateListOf<Notificacao>() }
+
+    LaunchedEffect(uid) {
+        if (uid!!.isNotEmpty()) {
+            AppModule.firestore.collection("notificacoes")
+                .whereEqualTo("destinatario", uid)
+                .whereEqualTo("resolvida", false)
+                .addSnapshotListener { snapshot, error ->
+                    if (error != null) return@addSnapshotListener
+                    if (snapshot != null) {
+                        notificacoes.clear()
+                        snapshot.documents.forEach { doc ->
+                            val mensagem = doc.getString("mensagem") ?: ""
+                            val timestamp = doc.getTimestamp("dataEnvio")?.toDate() ?: Date()
+                            val destinatario = doc.getString("destinatario") ?: ""
+                            val resolvida = doc.getBoolean("resolvida") ?: false
+                            notificacoes.add(
+                                Notificacao(
+                                    id = doc.id,  // ⚡️ ID do documento
+                                    mensagem = mensagem,
+                                    dataEnvio = timestamp,
+                                    destinatario = destinatario,
+                                    resolvida = resolvida
+                                )
+                            )
+                        }
+                    }
+                }
+        }
+    }
+
     Column(
         modifier = Modifier
             .fillMaxSize()
             .background(Color.White)
     ) {
         // TOP BAR
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(56.dp)
-                .background(Color(0xFF006837))
-                .padding(horizontal = 16.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.SpaceBetween
-        ) {
-            Text(
-                text = "Loja Social",
-                color = Color.White,
-                fontSize = 18.sp,
-                fontWeight = FontWeight.Bold
-            )
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                IconButton(onClick = { /* TODO: notificações */ }) {
-                    Icon(
-                        imageVector = Icons.Filled.Notifications,
-                        contentDescription = "Notificações",
-                        tint = Color.White
-                    )
-                }
-                Text(
-                    text = "IPCA",
-                    color = Color.White,
-                    fontSize = 16.sp,
-                    fontWeight = FontWeight.Medium
-                )
-            }
-        }
+        TopBar(false)
 
         // TÍTULO ALERTAS
         Text(
@@ -82,28 +100,41 @@ fun MainFuncionarioScreen(
         )
 
         // LISTA DE ALERTAS
-        Column(
+        LazyColumn(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 16.dp)
+                .height(180.dp)
+                .padding(horizontal = 16.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            listOf(
-                "Validade de produto termina em 15 dias",
-                "Validade de produto termina em 5 dias",
-                "Entrega marcada para amanhã"
-            ).forEach { texto ->
+            items(notificacoes) { notificacao ->
                 Card(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(vertical = 4.dp),
+                        .clickable {
+                            AppModule.firestore.collection("notificacoes")
+                                .document(notificacao.id)
+                                .update("resolvida", true)
+                                .addOnSuccessListener {
+                                    notificacoes.remove(notificacao)
+                                }
+                        },
                     shape = RoundedCornerShape(8.dp),
                     colors = CardDefaults.cardColors(containerColor = Color(0xFFE8F5E9))
                 ) {
-                    Text(
-                        text = "• $texto",
-                        modifier = Modifier.padding(12.dp),
-                        fontSize = 14.sp
-                    )
+                    Column(modifier = Modifier.padding(12.dp)) {
+                        Text(
+                            text = "• ${notificacao.mensagem}",
+                            fontSize = 14.sp,
+                            color = Color.Black
+                        )
+                        Spacer(modifier = Modifier.height(4.dp))
+                        Text(
+                            text = notificacao.dataEnvio.format(),
+                            fontSize = 12.sp,
+                            color = Color.Gray
+                        )
+                    }
                 }
             }
         }
@@ -148,9 +179,7 @@ fun MainFuncionarioScreen(
             onLogout = onLogout,
             onPerfil= onPerfil
         )
-        }
-
-
+    }
 }
 
 @Composable

@@ -1,5 +1,6 @@
 package ipca.example.lojasocialipca.ui.screens.funcionario
 
+import android.util.Log
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.layout.Arrangement
@@ -16,12 +17,89 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import ipca.example.lojasocialipca.AppModule
 import ipca.example.lojasocialipca.helpers.criarData
 import ipca.example.lojasocialipca.helpers.format
 import ipca.example.lojasocialipca.models.Campanha
 import ipca.example.lojasocialipca.ui.theme.LojaSocialIpcaTheme
 import java.util.Calendar
 import ipca.example.lojasocialipca.ui.components.TopBar
+import java.util.Date
+
+@Composable
+fun ConsultarCampanhaView(
+    onCriarCampanha: () -> Unit = {},
+    onBack: () -> Unit = {}
+) {
+    var campanhas by remember { mutableStateOf<List<Campanha>>(emptyList()) }
+
+    // Buscar campanhas do Firestore e ouvir alterações em tempo real
+    LaunchedEffect(Unit) {
+        val collectionRef = AppModule.firestore.collection("campanhas")
+
+        collectionRef.addSnapshotListener { snapshot, error ->
+            if (error != null) {
+                Log.e("Firestore", "Erro ao buscar campanhas", error)
+                return@addSnapshotListener
+            }
+
+            if (snapshot != null) {
+                val lista = snapshot.documents.mapNotNull { doc ->
+                    try {
+                        Campanha(
+                            nome = doc.getString("nome") ?: "",
+                            dataInicio = doc.getTimestamp("dataInicio")?.toDate() ?: Date(),
+                            dataFim = doc.getTimestamp("dataFim")?.toDate(),
+                            descricao = doc.getString("descricao") ?: "",
+                            tipo = doc.getString("tipo") ?: "",
+                            concluida = doc.getBoolean("concluida") ?: false,
+                            responsavel = doc.getString("responsavel") ?: ""
+                        )
+                    } catch (e: Exception) {
+                        null
+                    }
+                }.sortedBy { it.dataInicio } // ordenar por data de início
+                campanhas = lista
+            }
+        }
+    }
+
+    // Função para finalizar campanha
+    fun finalizarCampanha(campanha: Campanha) {
+        AppModule.firestore.collection("campanhas")
+            .whereEqualTo("nome", campanha.nome)
+            .get()
+            .addOnSuccessListener { querySnapshot ->
+                if (!querySnapshot.isEmpty) {
+                    val docId = querySnapshot.documents[0].id
+                    AppModule.firestore.collection("campanhas")
+                        .document(docId)
+                        .update("concluida", true)
+                        .addOnSuccessListener {
+                            Log.d("Firestore", "Campanha '${campanha.nome}' finalizada com sucesso!")
+                            // Não precisa atualizar a lista manualmente, o snapshot listener fará isso
+                        }
+                        .addOnFailureListener { e ->
+                            Log.e("Firestore", "Erro ao finalizar campanha", e)
+                        }
+                } else {
+                    Log.e("Firestore", "Campanha '${campanha.nome}' não encontrada")
+                }
+            }
+            .addOnFailureListener { e ->
+                Log.e("Firestore", "Erro ao buscar campanha para finalizar", e)
+            }
+    }
+
+    // Chamamos o Composable existente passando a lista e a função de finalizar
+    ConsultarCampanhaScreen(
+        campanhas = campanhas,
+        onFinalizarCampanha = { finalizarCampanha(it) },
+        onCriarCampanha = onCriarCampanha,
+        onBack = onBack
+    )
+}
+
 
 @Composable
 fun ConsultarCampanhaScreen(
@@ -37,7 +115,7 @@ fun ConsultarCampanhaScreen(
     ) {
 
         // TOP BAR
-        TopBar(onBack)
+        TopBar(true, onBack)
 
         // BOTÃO CRIAR CAMPANHA
         Row(
@@ -128,7 +206,7 @@ fun CampanhaCard(
             ) {
                 Text("Nome: ${campanha.nome}", fontSize = 14.sp)
                 Text("Tipo: ${campanha.tipo}", fontSize = 14.sp)
-                Text("Descrição: ${campanha.descricao}", fontSize = 14.sp)
+                Text("Descrição: ${campanha.descricao}", fontSize = 12.sp)
             }
 
             if (!campanha.concluida) {

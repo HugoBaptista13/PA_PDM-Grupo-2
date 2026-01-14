@@ -12,10 +12,28 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.tooling.preview.Preview
 import ipca.example.lojasocialipca.models.Candidatura
-import ipca.example.lojasocialipca.ui.AvaliarCandidaturaScreen
-import ipca.example.lojasocialipca.ui.ConsultarCandidaturaFuncionarioScreen
-import ipca.example.lojasocialipca.ui.ConsultarEntregasScreen
-import kotlin.Unit
+import ipca.example.lojasocialipca.models.Entrega
+import ipca.example.lojasocialipca.ui.screens.funcionario.AvaliarCandidaturaScreen
+import ipca.example.lojasocialipca.ui.screens.funcionario.ConsultarCandidaturaFuncionarioScreen
+import ipca.example.lojasocialipca.ui.screens.LoginScreen
+import ipca.example.lojasocialipca.ui.screens.RegisterScreen
+import ipca.example.lojasocialipca.ui.screens.beneficiario.ConsultarPedidoScreen
+import ipca.example.lojasocialipca.ui.screens.beneficiario.InserirPedidoScreen
+import ipca.example.lojasocialipca.ui.screens.beneficiario.MainBeneficiarioScreen
+import ipca.example.lojasocialipca.ui.screens.beneficiario.PerfilBeneficiarioScreen
+import ipca.example.lojasocialipca.ui.screens.candidato.CandidaturaScreen
+import ipca.example.lojasocialipca.ui.screens.candidato.ConsultarCandidaturaScreen
+import ipca.example.lojasocialipca.ui.screens.candidato.MainCandidatoScreen
+import ipca.example.lojasocialipca.ui.screens.funcionario.ConsultarCampanhaScreen
+import ipca.example.lojasocialipca.ui.screens.funcionario.ConsultarCampanhaView
+import ipca.example.lojasocialipca.ui.screens.funcionario.ConsultarEntregasScreen
+import ipca.example.lojasocialipca.ui.screens.funcionario.InserirCampanhaScreen
+import ipca.example.lojasocialipca.ui.screens.funcionario.InserirProdutoScreen
+import ipca.example.lojasocialipca.ui.screens.funcionario.MainFuncionarioScreen
+import ipca.example.lojasocialipca.ui.screens.funcionario.MarcarEntregaScreen
+import ipca.example.lojasocialipca.ui.screens.funcionario.PerfilFuncionarioScreen
+import ipca.example.lojasocialipca.ui.screens.funcionario.ProdutosFuncionarioScreen
+import ipca.example.lojasocialipca.ui.screens.funcionario.ProdutosFuncionarioView
 
 
 class MainActivity : ComponentActivity() {
@@ -35,6 +53,8 @@ fun LojaSocialApp() {
     // candidatura1 -> primeira página da candidatura
     // candidatura2 -> segunda página da candidatura
     var currentScreen by remember { mutableStateOf("login") }
+    var selectedCandidatura by remember { mutableStateOf<Candidatura?>(null) }
+    var selectedEntrega by remember { mutableStateOf<Entrega?>(null) }
 
     MaterialTheme {
         Surface {
@@ -124,7 +144,7 @@ fun LojaSocialApp() {
                 "consultarPedido" -> ConsultarPedidoScreen(
                     pedidos = emptyList(),
                     onBack = {
-                        currentScreen = "mainBenficiario"
+                        currentScreen = "mainBeneficiario"
                     }
                 )
 
@@ -156,8 +176,7 @@ fun LojaSocialApp() {
                     onMudarPassword = {}
                 )
 
-                "produtosFuncionario" -> ProdutosFuncionarioScreen(
-                    produtos = emptyList(),
+                "produtosFuncionario" -> ProdutosFuncionarioView(
                     onBack = {
                         currentScreen = "mainFuncionario"
                     },
@@ -175,8 +194,10 @@ fun LojaSocialApp() {
                     }
                 )
 
-                "consultarCampanha" -> ConsultarCampanhaScreen(
-                    campanhas = emptyList(),
+                "consultarCampanha" -> ConsultarCampanhaView(
+                    onBack = {
+                        currentScreen = "mainFuncionario"
+                    },
                     onCriarCampanha = {
                         currentScreen = "inserirCampanha"
                     }
@@ -185,54 +206,53 @@ fun LojaSocialApp() {
                 "inserirCampanha" -> InserirCampanhaScreen(
                     onBack = {
                         currentScreen = "consultarCampanha"
-                    },
-                    onCriarCampanha = {
-                        currentScreen = "consultarCampanha"
                     }
                 )
 
                 "funcionarioCandidatura" -> ConsultarCandidaturaFuncionarioScreen(
-                    candidaturas = emptyList(),
                     onBack = {
                         currentScreen = "mainFuncionario"
                     },
-                    onAvaliar = {
+                    onAvaliar = { candidatura ->
+                        selectedCandidatura = candidatura
                         currentScreen = "avaliarCandidatura"
                     }
                 )
 
-                "avaliarCandidatura" -> AvaliarCandidaturaScreen(
-                    candidatura = Candidatura(),
-                    onBack = {
-                        currentScreen = "funcionarioCandidatura"
-                    },
-                    onAprovar = {
-                        currentScreen = "funcionarioCandidatura"
-                    },
-                    onReprovar = {
-                        currentScreen = "funcionarioCandidatura"
+                "avaliarCandidatura" -> {
+                    // Só mostra a tela se selectedCandidatura não for nula
+                    selectedCandidatura?.let { candidatura ->
+                        AvaliarCandidaturaScreen(
+                            candidatura = candidatura,
+                            onBack = {
+                                currentScreen = "funcionarioCandidatura"
+                                selectedCandidatura = null // limpa após voltar
+                            }
+                        )
                     }
-                )
+                }
 
                 "consultarEntrega" -> ConsultarEntregasScreen(
-                    entregas = emptyList(),
                     onBack = {
                         currentScreen = "mainFuncionario"
                     },
-                    onMarcar = {
+                    onMarcar = { entrega ->
+                        selectedEntrega = entrega
                         currentScreen = "marcarEntrega"
                     }
                 )
 
-                "marcarEntrega" -> MarcarEntregaScreen(
-                    produtos = emptyList(),
-                    onBack = {
-                        currentScreen = "consultarEntrega"
-                    },
-                    onConfirmar = {
-                        currentScreen = "consultarEntrega"
+                "marcarEntrega" -> {
+                    selectedEntrega?.let { entrega ->
+                        MarcarEntregaScreen(
+                            entrega = entrega,
+                            onBack = {
+                                currentScreen = "consultarEntrega"
+                                selectedEntrega = null
+                            }
+                        )
                     }
-                )
+                }
             }
         }
     }

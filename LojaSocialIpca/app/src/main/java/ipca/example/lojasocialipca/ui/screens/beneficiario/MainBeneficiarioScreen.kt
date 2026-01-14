@@ -30,6 +30,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import ipca.example.lojasocialipca.ui.components.BottomBar
+import ipca.example.lojasocialipca.ui.components.TopBar
 
 @Composable
 fun MainBeneficiarioScreen(
@@ -44,45 +45,7 @@ fun MainBeneficiarioScreen(
             .fillMaxSize()
             .background(Color.White)
     ) {
-        // TOP BAR: "Loja Social" à esquerda, ícone de notificação + "IPCA" à direita
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(56.dp)
-                .background(Color(0xFF006837))
-                .padding(horizontal = 16.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.SpaceBetween
-        ) {
-            // Esquerda: LOJA SOCIAL
-            Text(
-                text = "Loja Social",
-                color = Color.White,
-                fontSize = 20.sp,
-                fontWeight = FontWeight.Bold
-            )
-
-            // Direita: ícone de notificação + IPCA
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                IconButton(onClick = { /* TODO: abrir notificações */ }) {
-                    Icon(
-                        imageVector = Icons.Filled.Notifications,
-                        contentDescription = "Notificações",
-                        tint = Color.White
-                    )
-                }
-
-                Text(
-                    text = "IPCA",
-                    color = Color.White,
-                    fontSize = 16.sp,
-                    fontWeight = FontWeight.Medium
-                )
-            }
-        }
+        TopBar(mostrarBack = false)
 
         // CONTEÚDO PRINCIPAL: botões grandes no centro
         Column(

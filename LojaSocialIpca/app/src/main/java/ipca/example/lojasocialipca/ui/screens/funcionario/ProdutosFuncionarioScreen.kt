@@ -1,20 +1,38 @@
 package ipca.example.lojasocialipca.ui.screens.funcionario
 
+import android.util.Log
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.KeyboardArrowDown
-import androidx.compose.material3.*
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
-import androidx.compose.runtime.*
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -23,13 +41,15 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import ipca.example.lojasocialipca.AppModule
 import ipca.example.lojasocialipca.R
 import ipca.example.lojasocialipca.helpers.criarData
 import ipca.example.lojasocialipca.helpers.format
 import ipca.example.lojasocialipca.models.Produto
+import ipca.example.lojasocialipca.ui.components.TopBar
 import ipca.example.lojasocialipca.ui.theme.LojaSocialIpcaTheme
 import java.util.Calendar
-import ipca.example.lojasocialipca.ui.components.TopBar
+import java.util.Date
 
 const val ESTADO_ATIVO = "Ativo"
 
@@ -41,6 +61,53 @@ fun List<Produto>.groupByTipoECategoria():
         }
 
 @Composable
+fun ProdutosFuncionarioView(
+    onInserirProduto: () -> Unit = {},
+    onBack: () -> Unit = {}
+) {
+    var produtos by remember { mutableStateOf<List<Produto>>(emptyList()) }
+
+    // Carregar produtos do Firestore quando o Composable iniciar
+    LaunchedEffect(Unit) {
+        val uidFuncionario = AppModule.auth.currentUser?.uid ?: return@LaunchedEffect
+        val collectionRef = AppModule.firestore.collection("produtos")
+
+        // Ouvir alterações em tempo real
+        collectionRef.addSnapshotListener { snapshot, error ->
+            if (error != null) {
+                Log.e("Firestore", "Erro ao buscar produtos", error)
+                return@addSnapshotListener
+            }
+
+            if (snapshot != null) {
+                val lista = snapshot.documents.mapNotNull { doc ->
+                    try {
+                        Produto(
+                            idProduto = doc.id,
+                            nome = doc.getString("nome") ?: "",
+                            tipo = doc.getString("tipo") ?: "",
+                            categoria = doc.getString("categoria") ?: "",
+                            validade = (doc.getTimestamp("validade")?.toDate()) ?: Date(),
+                            dataEntrada = (doc.getTimestamp("dataEntrada")?.toDate()) ?: Date(),
+                            estadoProduto = doc.getString("estadoProduto") ?: "ATIVO"
+                        )
+                    } catch (e: Exception) {
+                        null
+                    }
+                }
+                produtos = lista
+            }
+        }
+    }
+
+    ProdutosFuncionarioScreen(
+        produtos = produtos,
+        onInserirProduto = onInserirProduto,
+        onBack = onBack
+    )
+}
+
+@Composable
 fun ProdutosFuncionarioScreen(
     produtos: List<Produto>,
     onInserirProduto: () -> Unit = {},
@@ -48,6 +115,7 @@ fun ProdutosFuncionarioScreen(
 ) {
     val produtosAtivos = remember(produtos) {
         produtos.filter { it.estadoProduto == ESTADO_ATIVO }
+            .sortedBy { it.validade }
     }
 
     val produtosPorTipo = remember(produtosAtivos) {
@@ -60,7 +128,7 @@ fun ProdutosFuncionarioScreen(
             .background(Color.White)
     ) {
 
-        item { TopBar(onBack) }
+        item { TopBar(true, onBack) }
 
         item {
             Text(
@@ -109,26 +177,6 @@ fun ProdutosFuncionarioScreen(
             }
         }
     }
-}
-
-@Composable
-@Preview(showBackground = true)
-fun ProdutoItemPreview() {
-    val dataExemplo = criarData(2025, Calendar.MAY, 25)
-    val dataValidadeExemplo = criarData(2025, Calendar.DECEMBER, 18)
-    ProdutoItem(
-        Produto(
-            idProduto = "250520251",
-            campanha = "Teste",
-            nome = "Arroz 1Kg",
-            tipo = "Alimentar",
-            categoria = "Arroz",
-            validade = dataValidadeExemplo ,
-            estadoProduto = "Ativo",
-            dataEntrada = dataExemplo,
-            responsavel = "Teste",
-        )
-    )
 }
 
 @Composable
@@ -214,8 +262,7 @@ fun CategoriaExpandable(
 
 @Composable
 fun ProdutoItem(
-    produto: Produto,
-    onRemover: (Produto) -> Unit = {}
+    produto: Produto
 ) {
     Card(
         modifier = Modifier
@@ -254,7 +301,18 @@ fun ProdutoItem(
             }
 
             IconButton(
-                onClick = { onRemover(produto) },
+                onClick = {
+                    // Remover produto do Firestore
+                    AppModule.firestore.collection("produtos")
+                        .document(produto.idProduto)
+                        .delete()
+                        .addOnSuccessListener {
+                            Log.d("Firestore", "Produto removido com sucesso!")
+                        }
+                        .addOnFailureListener { e ->
+                            Log.e("Firestore", "Erro ao remover produto", e)
+                        }
+                },
                 modifier = Modifier
                     .size(40.dp)
                     .padding(end = 12.dp)
@@ -305,6 +363,26 @@ fun TipoLinha(
             )
         }
     }
+}
+
+@Composable
+@Preview(showBackground = true)
+fun ProdutoItemPreview() {
+    val dataExemplo = criarData(2025, Calendar.MAY, 25)
+    val dataValidadeExemplo = criarData(2025, Calendar.DECEMBER, 18)
+    ProdutoItem(
+        Produto(
+            idProduto = "250520251",
+            campanha = "Teste",
+            nome = "Arroz 1Kg",
+            tipo = "Alimentar",
+            categoria = "Arroz",
+            validade = dataValidadeExemplo ,
+            estadoProduto = "Ativo",
+            dataEntrada = dataExemplo,
+            responsavel = "Teste",
+        )
+    )
 }
 
 @Preview(showBackground = true)

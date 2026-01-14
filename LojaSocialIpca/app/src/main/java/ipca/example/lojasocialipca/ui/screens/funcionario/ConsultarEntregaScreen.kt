@@ -1,56 +1,132 @@
 package ipca.example.lojasocialipca.ui.screens.funcionario
 
+import android.widget.Toast
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
+import ipca.example.lojasocialipca.AppModule
 import ipca.example.lojasocialipca.helpers.format
 import ipca.example.lojasocialipca.models.Entrega
-import java.util.*
+import ipca.example.lojasocialipca.models.Produto
 import ipca.example.lojasocialipca.ui.components.TopBar
+import java.util.Date
 
 @Composable
 fun ConsultarEntregasScreen(
-    entregas: List<Entrega>,
     onRemarcarConfirmado: (Entrega) -> Unit = {},
     onRemarcarRejeitado: (Entrega) -> Unit = {},
     onMarcar: (Entrega) -> Unit = {},
     onBack: () -> Unit = {}
 ) {
+    val context = LocalContext.current
+    var entregas by remember { mutableStateOf<List<Entrega>>(emptyList()) }
+    var produtosMap by remember { mutableStateOf<Map<String, Produto>>(emptyMap()) }
 
     var mostrarDialog by remember { mutableStateOf(false) }
     var entregaSelecionada by remember { mutableStateOf<Entrega?>(null) }
+
+    // Buscar produtos do Firestore
+    LaunchedEffect(Unit) {
+        val produtosRef = AppModule.firestore.collection("produtos")
+        produtosRef.addSnapshotListener { snapshot, error ->
+            if (snapshot != null) {
+                produtosMap = snapshot.documents.mapNotNull { doc ->
+                    val id = doc.id
+                    val nome = doc.getString("nome") ?: return@mapNotNull null
+                    id to Produto(
+                        idProduto = id,
+                        nome = nome,
+                        categoria = doc.getString("categoria") ?: "",
+                        tipo = doc.getString("tipo") ?: "",
+                        campanha = doc.getString("campanha"),
+                        validade = doc.getTimestamp("validade")?.toDate() ?: Date(),
+                        estadoProduto = doc.getString("estadoProduto") ?: "",
+                        dataEntrada = doc.getTimestamp("dataEntrada")?.toDate() ?: Date(),
+                        responsavel = doc.getString("responsavel") ?: ""
+                    )
+                }.toMap()
+            }
+        }
+    }
+
+    // Buscar entregas do Firestore
+    LaunchedEffect(Unit) {
+        val entregasRef = AppModule.firestore.collection("entregas")
+        entregasRef.addSnapshotListener { snapshot, error ->
+            if (snapshot != null) {
+                entregas = snapshot.documents.mapNotNull { doc ->
+                    try {
+                        Entrega(
+                            numEntrega = doc.getLong("numEntrega")?.toInt() ?: 0,
+                            destinatario = doc.getString("destinatario") ?: "",
+                            responsavel = doc.getString("responsavel"),
+                            dataSubmissao = doc.getTimestamp("dataSubmissao")?.toDate() ?: Date(),
+                            dataEntrega = doc.getTimestamp("dataEntrega")?.toDate(),
+                            dataRemarcacao = doc.getTimestamp("dataRemarcacao")?.toDate(),
+                            estadoEntrega = doc.getString("estadoEntrega") ?: "PENDENTE",
+                            produtos = doc.get("produtos") as? List<String> ?: emptyList(),
+                            tipo = doc.getString("tipo") ?: "",
+                            descricao = doc.getString("descricao") ?: ""
+                        )
+                    } catch (e: Exception) {
+                        null
+                    }
+                }
+            }
+        }
+    }
 
     Column(
         modifier = Modifier
             .fillMaxSize()
             .background(Color.White)
     ) {
+        TopBar(true, onBack)
 
-        // TOP BAR
-        TopBar(onBack)
-
-        // LISTA
-        Column(
-            modifier = Modifier
-                .padding(16.dp),
+        LazyColumn(
+            modifier = Modifier.padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            entregas.forEach { entrega ->
+            items(entregas) { entrega ->
                 EntregaCard(
                     entrega = entrega,
+                    produtosMap = produtosMap,
                     onAcaoPrincipal = {
                         if (entrega.estadoEntrega == "POR_REMARCAR") {
                             entregaSelecionada = entrega
@@ -59,76 +135,77 @@ fun ConsultarEntregasScreen(
                             onMarcar(entrega)
                         }
                     },
-                    onCancelar = { onRemarcarRejeitado(entrega) }
+                    onCancelar = {
+                        entregaSelecionada = entrega
+                        mostrarDialog = true
+                    }
                 )
             }
         }
     }
 
-    // DIALOG REMARCAR
+    // Dialog de remarcar / rejeitar
     if (mostrarDialog && entregaSelecionada != null) {
         Dialog(onDismissRequest = { mostrarDialog = false }) {
-
             Card(
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(20.dp),
                 colors = CardDefaults.cardColors(containerColor = Color.White)
             ) {
-                Column(
-                    modifier = Modifier.padding(20.dp),
-                    verticalArrangement = Arrangement.spacedBy(16.dp)
-                ) {
-
+                Column(modifier = Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.End
                     ) {
                         IconButton(onClick = { mostrarDialog = false }) {
-                            Icon(
-                                imageVector = Icons.Default.Close,
-                                contentDescription = "Fechar",
-                                tint = Color.Red
-                            )
+                            Icon(Icons.Default.Close, contentDescription = "Fechar", tint = Color.Red)
                         }
                     }
 
-                    Text(
-                        text = "Data Original: ${entregaSelecionada!!.dataEntrega!!.format()}",
-                        fontSize = 18.sp
-                    )
+                    Text("Data Original: ${entregaSelecionada!!.dataEntrega?.format() ?: "--"}", fontSize = 18.sp)
+                    Text("Nova Data: ${entregaSelecionada!!.dataRemarcacao?.format() ?: "--"}", fontSize = 18.sp)
 
-                    Text(
-                        text = "Nova Data: ${
-                            entregaSelecionada!!.dataRemarcacao?.format() ?: "--"
-                        }",
-                        fontSize = 18.sp
-                    )
-
-                    Spacer(modifier = Modifier.height(8.dp))
+                    Spacer(Modifier.height(8.dp))
 
                     Button(
                         onClick = {
                             mostrarDialog = false
+                            val docRef = AppModule.firestore.collection("entregas")
+                                .document(entregaSelecionada!!.numEntrega.toString())
+
+                            docRef.update(
+                                mapOf(
+                                    "dataEntrega" to entregaSelecionada!!.dataRemarcacao,
+                                    "estadoEntrega" to "POR_ENTREGAR"
+                                )
+                            )
+                            Toast.makeText(context, "Entrega remarcada!", Toast.LENGTH_SHORT).show()
                             onRemarcarConfirmado(entregaSelecionada!!)
                         },
                         modifier = Modifier.fillMaxWidth(),
                         colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF006837)),
                         shape = RoundedCornerShape(12.dp)
-                    ) {
-                        Text("Remarcar", fontSize = 18.sp, fontWeight = FontWeight.Bold)
-                    }
+                    ) { Text("Remarcar", fontSize = 18.sp, fontWeight = FontWeight.Bold) }
 
                     Button(
                         onClick = {
                             mostrarDialog = false
+                            val docRef = AppModule.firestore.collection("entregas")
+                                .document(entregaSelecionada!!.numEntrega.toString())
+
+                            docRef.update(
+                                mapOf(
+                                    "dataRemarcacao" to null,
+                                    "estadoEntrega" to "POR_ENTREGAR"
+                                )
+                            )
+                            Toast.makeText(context, "Remarcação rejeitada!", Toast.LENGTH_SHORT).show()
                             onRemarcarRejeitado(entregaSelecionada!!)
                         },
                         modifier = Modifier.fillMaxWidth(),
                         colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFB00000)),
                         shape = RoundedCornerShape(12.dp)
-                    ) {
-                        Text("Rejeitar", fontSize = 18.sp, fontWeight = FontWeight.Bold)
-                    }
+                    ) { Text("Rejeitar", fontSize = 18.sp, fontWeight = FontWeight.Bold) }
                 }
             }
         }
@@ -138,11 +215,11 @@ fun ConsultarEntregasScreen(
 @Composable
 fun EntregaCard(
     entrega: Entrega,
+    produtosMap: Map<String, Produto>,
     onAcaoPrincipal: () -> Unit,
     onCancelar: () -> Unit
 ) {
-    val corFundo = if (entrega.estadoEntrega == "ENTREGUE")
-        Color(0xFF00B050) else Color(0xFFE0E0E0)
+    val corFundo = if (entrega.estadoEntrega == "ENTREGUE") Color(0xFF00B050) else Color(0xFFE0E0E0)
 
     val estadoTexto = when (entrega.estadoEntrega) {
         "PENDENTE" -> "Pendente"
@@ -172,7 +249,7 @@ fun EntregaCard(
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
             Text(
-                text = entrega.dataEntrega!!.format(),
+                text = entrega.dataEntrega?.format() ?: "--",
                 fontSize = 24.sp,
                 fontWeight = FontWeight.Bold
             )
@@ -190,7 +267,6 @@ fun EntregaCard(
             modifier = Modifier.fillMaxWidth(),
             verticalAlignment = Alignment.Top
         ) {
-
             Column(
                 modifier = Modifier
                     .weight(1f)
@@ -198,36 +274,24 @@ fun EntregaCard(
                     .background(Color.White)
                     .padding(12.dp)
             ) {
-
                 if (entrega.estadoEntrega == "PENDENTE") {
-
-                    Text(
-                        text = "Tipo: ${entrega.tipo}",
-                        fontSize = 14.sp,
-                        fontWeight = FontWeight.Normal
-                    )
-
+                    Text("Tipo: ${entrega.tipo}", fontSize = 14.sp)
                     Spacer(modifier = Modifier.height(4.dp))
-
-                    Text(
-                        text = entrega.descricao,
-                        fontSize = 12.sp
-                    )
-
+                    Text(entrega.descricao, fontSize = 12.sp)
                 } else {
+                    // Agrupar produtos pelo nome e contar ocorrências
+                    val produtosDetalhados = entrega.produtos
+                        .mapNotNull { produtosMap[it] }
+                        .groupingBy { it.nome }
+                        .eachCount()
 
-                    entrega.produtos.forEach { produto ->
-                        Text(
-                            text = produto,
-                            fontSize = 14.sp
-                        )
+                    produtosDetalhados.forEach { (nome, qtd) ->
+                        Text("$nome x $qtd", fontSize = 14.sp)
                     }
                 }
             }
 
-            val botaoModifier = Modifier
-                .width(108.dp)
-                .height(44.dp)
+            val botaoModifier = Modifier.width(108.dp).height(44.dp)
 
             if (botaoTexto != null) {
                 Spacer(modifier = Modifier.width(12.dp))
@@ -235,24 +299,19 @@ fun EntregaCard(
                     verticalArrangement = Arrangement.spacedBy(8.dp),
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
-
                     Button(
                         onClick = onAcaoPrincipal,
                         modifier = botaoModifier,
                         colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF006837)),
                         shape = RoundedCornerShape(12.dp)
-                    ) {
-                        Text(botaoTexto)
-                    }
+                    ) { Text(botaoTexto) }
 
                     Button(
                         onClick = onCancelar,
                         modifier = botaoModifier,
                         colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFB00000)),
                         shape = RoundedCornerShape(12.dp)
-                    ) {
-                        Text("Cancelar")
-                    }
+                    ) { Text("Cancelar") }
                 }
             }
         }
@@ -265,45 +324,6 @@ fun EntregaCard(
 @Composable
 fun ConsultarEntregasScreenPreview() {
     MaterialTheme {
-        ConsultarEntregasScreen(
-            entregas = listOf(
-                Entrega(
-                    numEntrega = 1,
-                    destinatario = "João",
-                    responsavel = "Funcionário A",
-                    dataEntrega = Date(),
-                    estadoEntrega = "PENDENTE",
-                    produtos = listOf("Produto alimentar"),
-                    dataSubmissao = Date(),
-                    dataRemarcacao = Date(),
-                    tipo = "Produto Alimentar",
-                    descricao = "Eu queria um cabaz que durasse cerca de um mês."
-                ),
-                Entrega(
-                    numEntrega = 2,
-                    destinatario = "Maria",
-                    responsavel = "Funcionário B",
-                    dataEntrega = Date(),
-                    dataRemarcacao = Date(),
-                    estadoEntrega = "POR_REMARCAR",
-                    produtos = listOf("Arroz x 2", "Atum x 6"),
-                    dataSubmissao = Date(),
-                    tipo = "",
-                    descricao = ""
-                ),
-                Entrega(
-                    numEntrega = 3,
-                    destinatario = "Ana",
-                    responsavel = "Funcionário C",
-                    dataEntrega = Date(),
-                    estadoEntrega = "ENTREGUE",
-                    produtos = listOf("Bolachas x 2"),
-                    dataSubmissao = Date(),
-                    dataRemarcacao = Date(),
-                    tipo = "",
-                    descricao = ""
-                )
-            )
-        )
+        ConsultarEntregasScreen()
     }
 }

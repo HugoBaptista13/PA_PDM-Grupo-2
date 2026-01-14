@@ -20,7 +20,10 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
 @Composable
-fun TopBar(onBack: () -> Unit) {
+fun TopBar(
+    mostrarBack: Boolean,
+    onBack: () -> Unit = {}
+) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -30,10 +33,19 @@ fun TopBar(onBack: () -> Unit) {
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.SpaceBetween
     ) {
+
         Row(verticalAlignment = Alignment.CenterVertically) {
-            IconButton(onClick = onBack) {
-                Icon(Icons.AutoMirrored.Filled.ArrowBack, "Voltar", tint = Color.White)
+
+            if (mostrarBack) {
+                IconButton(onClick = onBack) {
+                    Icon(
+                        imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                        contentDescription = "Voltar",
+                        tint = Color.White
+                    )
+                }
             }
+
             Text(
                 text = "Loja Social",
                 color = Color.White,
@@ -41,6 +53,12 @@ fun TopBar(onBack: () -> Unit) {
                 fontWeight = FontWeight.Bold
             )
         }
-        Text("IPCA", color = Color.White, fontSize = 16.sp, fontWeight = FontWeight.Medium)
+
+        Text(
+            text = "IPCA",
+            color = Color.White,
+            fontSize = 16.sp,
+            fontWeight = FontWeight.Medium
+        )
     }
 }

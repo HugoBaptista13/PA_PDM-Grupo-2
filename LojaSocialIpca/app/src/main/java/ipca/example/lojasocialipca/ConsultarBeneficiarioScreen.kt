@@ -1,2 +1,0 @@
-package ipca.example.lojasocialipca
-

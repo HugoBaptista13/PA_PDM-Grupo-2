@@ -1,44 +1,122 @@
-package ipca.example.lojasocialipca.ui
+package ipca.example.lojasocialipca.ui.screens.funcionario
 
+import android.util.Log
+import android.widget.Toast
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.*
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import ipca.example.lojasocialipca.AppModule
+import ipca.example.lojasocialipca.helpers.format
 import ipca.example.lojasocialipca.models.Candidatura
-import java.text.SimpleDateFormat
-import java.util.*
 import ipca.example.lojasocialipca.ui.components.TopBar
+import java.util.Date
 
 @Composable
 fun ConsultarCandidaturaFuncionarioScreen(
-    candidaturas: List<Candidatura>,
     onAvaliar: (Candidatura) -> Unit = {},
     onBack: () -> Unit = {}
 ) {
+    val context = LocalContext.current
+    var candidaturas by remember { mutableStateOf<List<Candidatura>>(emptyList()) }
+
+    // Buscar candidaturas do Firestore em tempo real
+    LaunchedEffect(Unit) {
+        val collectionRef = AppModule.firestore.collection("candidaturas")
+
+        collectionRef.addSnapshotListener { snapshot, error ->
+            if (error != null) {
+                Log.e("Firestore", "Erro ao buscar candidaturas", error)
+                Toast.makeText(context, "Erro ao buscar candidaturas", Toast.LENGTH_SHORT).show()
+                return@addSnapshotListener
+            }
+
+            if (snapshot != null) {
+                val lista = snapshot.documents.mapNotNull { doc ->
+                    try {
+                        Candidatura(
+                            idCandidatura = doc.id,
+                            nome = doc.getString("nome") ?: "",
+                            numAluno = doc.getLong("numAluno")?.toInt() ?: 0,
+                            anoLetivo = doc.getString("anoLetivo") ?: "",
+                            curso = doc.getString("curso") ?: "",
+                            cartaoCidadao = doc.getString("cartaoCidadao") ?: "",
+                            dataNascimento = doc.getTimestamp("dataNascimento")?.toDate() ?: Date(),
+                            telemovel = doc.getString("telemovel") ?: "",
+                            email = doc.getString("email") ?: "",
+                            grau = doc.getString("grau") ?: "",
+                            tipologiaPedido = doc.get("tipologiaPedido") as? List<String> ?: emptyList(),
+                            faes = doc.getBoolean("faes") ?: false,
+                            bolseiro = doc.getBoolean("bolseiro") ?: false,
+                            valorBolsa = doc.getDouble("valorBolsa"),
+                            dataSubmissao = doc.getTimestamp("dataSubmissao")?.toDate() ?: Date(),
+                            estadoCandidatura = doc.getString("estadoCandidatura") ?: "FILA_ESPERA"
+                        )
+                    } catch (e: Exception) {
+                        null
+                    }
+                }
+
+                // Define prioridade dos estados
+                val prioridadeEstado = mapOf(
+                    "FILA_ESPERA" to 0,
+                    "APROVADA" to 1,
+                    "REPROVADA" to 2
+                )
+
+                // Ordena por estado e data de submissão
+                candidaturas = lista.sortedWith(
+                    compareBy<Candidatura> { prioridadeEstado[it.estadoCandidatura] ?: 3 }
+                        .thenByDescending { it.dataSubmissao }
+                )
+            }
+        }
+    }
+
     Column(
         modifier = Modifier
             .fillMaxSize()
             .background(Color.White)
     ) {
         // TOP BAR
-        TopBar(onBack)
+        TopBar(true, onBack)
 
-        Column(
+        // LISTA DE CANDIDATURAS
+        LazyColumn(
             modifier = Modifier
                 .weight(1f)
                 .padding(horizontal = 16.dp, vertical = 24.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            candidaturas.forEach { candidatura ->
+            items(candidaturas) { candidatura ->
                 CandidaturaFuncionarioCard(
                     candidatura = candidatura,
                     onAvaliar = { onAvaliar(candidatura) }
@@ -53,24 +131,15 @@ fun CandidaturaFuncionarioCard(
     candidatura: Candidatura,
     onAvaliar: () -> Unit
 ) {
-    val estadoLower = candidatura.estadoCandidatura.lowercase()
-
-    val corFundo = when {
-        estadoLower.contains("aprovado") || estadoLower.contains("aprovada") -> Color(0xFF00B050)
-        estadoLower.contains("reprovado") || estadoLower.contains("reprovada") -> Color(0xFFFF4C4C)
-        else -> Color(0xFFE0E0E0)
+    val (corFundo, textoEstado) = when (candidatura.estadoCandidatura) {
+        "APROVADA" -> Color(0xFF00B050) to "Aprovada"
+        "REPROVADA" -> Color(0xFFFF4C4C) to "Reprovada"
+        "FILA_ESPERA" -> Color(0xFFE0E0E0) to "Em fila\nde espera"
+        else -> Color(0xFFE0E0E0) to "Desconhecido"
     }
 
-    val textoEstado = when {
-        estadoLower.contains("aprovado") || estadoLower.contains("aprovada") -> "Aprovado"
-        estadoLower.contains("reprovado") || estadoLower.contains("reprovada") -> "Reprovada"
-        else -> "Em fila\nde espera"
-    }
-
-    val dataFormatada = formatDataSubmissao(candidatura.dataSubmissao)
-    val mostrarBotao = !estadoLower.contains("aprovado") &&
-            !estadoLower.contains("reprovada") &&
-            !estadoLower.contains("reprovado")
+    val dataFormatada = candidatura.dataSubmissao.format()
+    val mostrarBotao = candidatura.estadoCandidatura == "FILA_ESPERA"
 
     Column(
         modifier = Modifier
@@ -112,7 +181,7 @@ fun CandidaturaFuncionarioCard(
                     .padding(12.dp)
             ) {
                 Text("Nome: ${candidatura.nome}", fontSize = 16.sp)
-                Text("Nºaluno: ${candidatura.numAluno}", fontSize = 16.sp)
+                Text("Nº aluno: ${candidatura.numAluno}", fontSize = 16.sp)
                 Text("Ano Letivo: ${candidatura.anoLetivo}", fontSize = 16.sp)
                 Text("Curso: ${candidatura.curso}", fontSize = 16.sp)
             }
@@ -136,79 +205,11 @@ fun CandidaturaFuncionarioCard(
 }
 
 
-
-// UTILITÁRIOS
-private val dateFormatter = SimpleDateFormat("dd/MM/yyyy", Locale.getDefault())
-
-private fun formatDataSubmissao(data: Date): String {
-    return try {
-        dateFormatter.format(data)
-    } catch (e: Exception) {
-        "Data inválida"
-    }
-}
-
-
-
 @Preview(showBackground = true, showSystemUi = true)
 @Composable
 fun ConsultarCandidaturaFuncionarioScreenPreview() {
     MaterialTheme {
-        ConsultarCandidaturaFuncionarioScreen(
-            candidaturas = listOf(
-                Candidatura(
-                    anoLetivo = "2025/2026",
-                    nome = "Donald J. Trump",
-                    cartaoCidadao = "00000000",
-                    dataNascimento = Date(),
-                    telemovel = "000000000",
-                    email = "email@email.com",
-                    grau = "1",
-                    curso = "Contabilidade",
-                    numAluno = 22340,
-                    tipologiaPedido = listOf(""),
-                    faes = false,
-                    bolseiro = false,
-                    valorBolsa = null,
-                    dataSubmissao = Date(),
-                    estadoCandidatura = "Aprovado"
-                ),
-                Candidatura(
-                    anoLetivo = "2025/2026",
-                    nome = "Fabio Sandro",
-                    cartaoCidadao = "00000000",
-                    dataNascimento = Date(),
-                    telemovel = "000000000",
-                    email = "email@email.com",
-                    grau = "1",
-                    curso = "Design Grafico",
-                    numAluno = 1340,
-                    tipologiaPedido = listOf(""),
-                    faes = false,
-                    bolseiro = false,
-                    valorBolsa = null,
-                    dataSubmissao = Date(),
-                    estadoCandidatura = "Em fila de espera"
-                ),
-                Candidatura(
-                    anoLetivo = "2025/2026",
-                    nome = "Janiqua Feliz",
-                    cartaoCidadao = "00000000",
-                    dataNascimento = Date(),
-                    telemovel = "000000000",
-                    email = "email@email.com",
-                    grau = "1",
-                    curso = "Solicitadoria",
-                    numAluno = 28333,
-                    tipologiaPedido = listOf(""),
-                    faes = false,
-                    bolseiro = false,
-                    valorBolsa = null,
-                    dataSubmissao = Date(),
-                    estadoCandidatura = "Reprovada"
-                )
-            )
-        ) { }
+        ConsultarCandidaturaFuncionarioScreen()
     }
 }
 

@@ -1,5 +1,6 @@
 package ipca.example.lojasocialipca.ui.screens.funcionario
 
+import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
@@ -17,7 +18,6 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material3.Button
@@ -27,6 +27,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateListOf
@@ -37,45 +38,19 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import ipca.example.lojasocialipca.AppModule
 import ipca.example.lojasocialipca.helpers.criarData
+import ipca.example.lojasocialipca.models.Entrega
 import ipca.example.lojasocialipca.models.Produto
 import ipca.example.lojasocialipca.ui.components.ComboBox
 import ipca.example.lojasocialipca.ui.components.NumericUpDown
-import java.util.Calendar
-
-
-
-fun produtosDisponiveisParaIndice(
-    produtos: List<Produto>,
-    selecionados: List<String>,
-    indiceAtual: Int
-): List<String> {
-    return produtos
-        .map { "ID-${it.idProduto}-${it.nome}" }
-        .filter { selecionado ->
-            selecionados.getOrNull(indiceAtual) == selecionado ||
-                    !selecionados.contains(selecionado)
-        }
-}
-
-
-fun categoriasDisponiveis(produtos: List<Produto>): List<String> =
-    produtos
-        .filter { it.estadoProduto == "Ativo" }
-        .map { it.categoria }
-        .distinct()
-
-fun produtosPorCategoria(
-    produtos: List<Produto>,
-    categoria: String
-): List<Produto> =
-    produtos.filter {
-        it.estadoProduto == "Ativo" && it.categoria == categoria
-    }
+import ipca.example.lojasocialipca.ui.components.TopBar
+import java.util.Date
 
 class LinhaEntregaProduto {
 
@@ -87,45 +62,54 @@ class LinhaEntregaProduto {
 
 @Composable
 fun MarcarEntregaScreen(
-    produtos: List<Produto>,
-    onBack: () -> Unit = {},
-    onConfirmar: () -> Unit = {}
+    entrega: Entrega,
+    onBack: () -> Unit = {}
 ) {
+    val context = LocalContext.current
     val linhas = remember { mutableStateListOf<LinhaEntregaProduto>() }
 
-    var ano by remember { mutableStateOf("") }
-    var mes by remember { mutableStateOf("") }
     var dia by remember { mutableStateOf("") }
+    var mes by remember { mutableStateOf("") }
+    var ano by remember { mutableStateOf("") }
 
-    val categorias = categoriasDisponiveis(produtos)
+    var produtos by remember { mutableStateOf<List<Produto>>(emptyList()) }
+    var categorias by remember { mutableStateOf<List<String>>(emptyList()) }
+
+    // Buscar produtos do Firestore
+    LaunchedEffect(Unit) {
+        val produtosRef = AppModule.firestore.collection("produtos")
+        produtosRef.addSnapshotListener { snapshot, _ ->
+            if (snapshot != null) {
+                produtos = snapshot.documents.mapNotNull { doc ->
+                    val id = doc.id
+                    val nome = doc.getString("nome") ?: return@mapNotNull null
+                    Produto(
+                        idProduto = id,
+                        nome = nome,
+                        categoria = doc.getString("categoria") ?: "",
+                        tipo = doc.getString("tipo") ?: "",
+                        campanha = doc.getString("campanha"),
+                        validade = doc.getTimestamp("validade")?.toDate() ?: Date(),
+                        estadoProduto = doc.getString("estadoProduto") ?: "",
+                        dataEntrada = doc.getTimestamp("dataEntrada")?.toDate() ?: Date(),
+                        responsavel = doc.getString("responsavel") ?: ""
+                    )
+                }
+                categorias = produtos.filter { it.estadoProduto == "Ativo" }
+                    .map { it.categoria }
+                    .distinct()
+            }
+        }
+    }
 
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .background(Color.White) // Fundo branco para toda a tela
+            .background(Color.White)
     ) {
+        TopBar(true, onBack)
 
-        // TOP BAR
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(56.dp)
-                .background(Color(0xFF006837))
-                .padding(horizontal = 16.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            IconButton(onClick = onBack) {
-                Icon(Icons.AutoMirrored.Filled.ArrowBack, null, tint = Color.White)
-            }
-            Text(
-                "Loja Social",
-                color = Color.White,
-                fontSize = 18.sp,
-                fontWeight = FontWeight.Bold
-            )
-        }
-
-        // HEADER PRODUTOS
+        // HEADER + BOTÕES ADICIONAR/REMOVER LINHA
         Row(
             modifier = Modifier
                 .fillMaxWidth()
@@ -136,41 +120,31 @@ fun MarcarEntregaScreen(
             Text("Produtos", fontSize = 24.sp, fontWeight = FontWeight.Bold)
 
             Row(horizontalArrangement = Arrangement.spacedBy(18.dp)) {
-                // Botão Adicionar Linha
                 IconButton(
                     onClick = { linhas.add(LinhaEntregaProduto()) },
-                    modifier = Modifier
-                        .size(36.dp)
-                        .background(Color(0xFF006837), CircleShape)
-                ) {
-                    Icon(Icons.Default.Add, null, tint = Color.White)
-                }
+                    modifier = Modifier.size(36.dp).background(Color(0xFF006837), CircleShape)
+                ) { Icon(Icons.Default.Add, null, tint = Color.White) }
 
-                // Botão Remover Linha (apaga a última)
                 IconButton(
-                    onClick = {
-                        if (linhas.isNotEmpty()) linhas.removeAt(linhas.size - 1)
-                    },
-                    modifier = Modifier
-                        .size(36.dp)
-                        .background(Color.Red, CircleShape)
-                ) {
-                    Icon(Icons.Default.Delete, null, tint = Color.White)
-                }
+                    onClick = { if (linhas.isNotEmpty()) linhas.removeAt(linhas.size - 1) },
+                    modifier = Modifier.size(36.dp).background(Color.Red, CircleShape)
+                ) { Icon(Icons.Default.Delete, null, tint = Color.White) }
             }
         }
 
-        // LISTA DE PRODUTOS COM SCROLL E FUNDO CINZA
+        // LISTA DE LINHAS
         LazyColumn(
             modifier = Modifier
-                .weight(1f) // Ocupa o espaço restante
+                .weight(1f)
                 .fillMaxWidth()
-                .background(Color(0xFFE0E0E0)) // Apenas a lista com fundo cinza
+                .background(Color(0xFFE0E0E0))
                 .padding(12.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
             items(linhas) { linha ->
-                val produtosDaCategoria = produtosPorCategoria(produtos, linha.categoria)
+                val produtosDaCategoria = produtos.filter {
+                    it.estadoProduto == "Ativo" && it.categoria == linha.categoria
+                }
 
                 Column(
                     modifier = Modifier
@@ -180,7 +154,6 @@ fun MarcarEntregaScreen(
                         .border(1.dp, Color(0xFF006837), RoundedCornerShape(8.dp))
                         .padding(8.dp)
                 ) {
-                    // Categoria + quantidade
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.SpaceBetween,
@@ -194,7 +167,7 @@ fun MarcarEntregaScreen(
                                 linha.categoria = it
                                 linha.produtosSelecionados.clear()
                             },
-                            modifier = Modifier.fillMaxWidth(0.5f),
+                            modifier = Modifier.fillMaxWidth(0.5f)
                         )
 
                         Spacer(Modifier.width(8.dp))
@@ -207,24 +180,23 @@ fun MarcarEntregaScreen(
 
                     Spacer(Modifier.height(8.dp))
 
-                    // Produtos
                     repeat(linha.quantidade) { index ->
-                        val opcoesDisponiveis = produtosDisponiveisParaIndice(
-                            produtos = produtosDaCategoria,
-                            selecionados = linha.produtosSelecionados,
-                            indiceAtual = index
-                        )
+                        val opcoesDisponiveis = produtosDaCategoria
+                            .map { "ID-${it.idProduto}-${it.nome}" }
+                            .filter { selecionado ->
+                                linha.produtosSelecionados.getOrNull(index) == selecionado ||
+                                        !linha.produtosSelecionados.contains(selecionado)
+                            }
 
                         ComboBox(
                             label = "Produto ${index + 1}",
                             selected = linha.produtosSelecionados.getOrNull(index) ?: "",
                             options = opcoesDisponiveis,
                             onSelect = { selecionado ->
-                                if (linha.produtosSelecionados.size > index) {
+                                if (linha.produtosSelecionados.size > index)
                                     linha.produtosSelecionados[index] = selecionado
-                                } else {
+                                else
                                     linha.produtosSelecionados.add(selecionado)
-                                }
                             },
                             modifier = Modifier.fillMaxWidth()
                         )
@@ -235,61 +207,59 @@ fun MarcarEntregaScreen(
             }
         }
 
-        // DATA E BOTÃO CONFIRMAR (SEM FUNDO CINZA)
+        // DATA E BOTÃO CONFIRMAR
         Column(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            Text(
-                "Data da entrega",
-                fontSize = 14.sp,
-                fontWeight = FontWeight.Normal
-            )
-
+            Text("Data da entrega", fontSize = 14.sp, fontWeight = FontWeight.Normal)
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                OutlinedTextField(
-                    value = dia,
-                    onValueChange = { dia = it },
-                    modifier = Modifier.weight(1f),
-                    label = { Text("Dia") },
-                    singleLine = true
-                )
-                OutlinedTextField(
-                    value = mes,
-                    onValueChange = { mes = it },
-                    modifier = Modifier.weight(1f),
-                    label = { Text("Mês") },
-                    singleLine = true
-                )
-                OutlinedTextField(
-                    value = ano,
-                    onValueChange = { ano = it },
-                    modifier = Modifier.weight(1f),
-                    label = { Text("Ano") },
-                    singleLine = true
-                )
+                OutlinedTextField(value = dia, onValueChange = { dia = it }, modifier = Modifier.weight(1f), label = { Text("Dia") }, singleLine = true)
+                OutlinedTextField(value = mes, onValueChange = { mes = it }, modifier = Modifier.weight(1f), label = { Text("Mês") }, singleLine = true)
+                OutlinedTextField(value = ano, onValueChange = { ano = it }, modifier = Modifier.weight(1f), label = { Text("Ano") }, singleLine = true)
             }
 
             Button(
-                onClick = onConfirmar,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(56.dp),
+                onClick = {
+                    try {
+                        val dataEntrega = criarData(ano.toInt(), mes.toInt() - 1, dia.toInt())
+
+                        // Preparar lista de IDs de produtos selecionados
+                        val produtosSelecionadosIds = linhas.flatMap { linha ->
+                            linha.produtosSelecionados.map { it.substringAfter("ID-").substringBefore("-") }
+                        }
+
+                        // Atualizar entrega no Firestore
+                        val docRef = AppModule.firestore.collection("entregas").document(entrega.numEntrega.toString())
+                        val updateData = mapOf(
+                            "produtos" to produtosSelecionadosIds,
+                            "dataEntrega" to dataEntrega,
+                            "estadoEntrega" to "POR_ENTREGAR"
+                        )
+                        docRef.update(updateData)
+                            .addOnSuccessListener {
+                                Toast.makeText(context, "Entrega marcada com sucesso!", Toast.LENGTH_SHORT).show()
+                                onBack()
+                            }
+                            .addOnFailureListener { e ->
+                                Toast.makeText(context, "Erro ao marcar entrega: ${e.message}", Toast.LENGTH_LONG).show()
+                            }
+
+                    } catch (e: Exception) {
+                        Toast.makeText(context, "Data inválida", Toast.LENGTH_SHORT).show()
+                    }
+                },
+                modifier = Modifier.fillMaxWidth().height(56.dp),
                 shape = RoundedCornerShape(12.dp),
                 colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF006837))
             ) {
-                Text(
-                    text = "Confirmar Marcação",
-                    fontSize = 18.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = Color.White
-                )
+                Text("Confirmar Marcação", fontSize = 18.sp, fontWeight = FontWeight.Bold, color = Color.White)
             }
         }
     }
@@ -299,101 +269,9 @@ fun MarcarEntregaScreen(
 @Preview(showBackground = true)
 @Composable
 fun MarcarEntregaScreenPreview() {
-    val dataExemplo = criarData(2025, Calendar.MAY, 25)
-    val dataValidadeExemplo = criarData(2025, Calendar.DECEMBER, 18)
-
     MarcarEntregaScreen(
-        produtos = listOf(
-            Produto(
-                idProduto = "250520251",
-                campanha = "Teste",
-                nome = "Arroz 1Kg",
-                tipo = "Alimentar",
-                categoria = "Arroz",
-                validade = dataValidadeExemplo ,
-                estadoProduto = "Ativo",
-                dataEntrada = dataExemplo,
-                responsavel = "Teste",
-            ),
-            Produto(
-                idProduto = "250520252",
-                campanha = "Teste",
-                nome = "Arroz 1Kg",
-                tipo = "Alimentar",
-                categoria = "Arroz",
-                validade = dataValidadeExemplo ,
-                estadoProduto = "Ativo",
-                dataEntrada = dataExemplo,
-                responsavel = "Teste",
-            ),
-            Produto(
-                idProduto = "250520253",
-                campanha = "Teste",
-                nome = "Arroz 1Kg",
-                tipo = "Alimentar",
-                categoria = "Arroz",
-                validade = dataValidadeExemplo ,
-                estadoProduto = "Ativo",
-                dataEntrada = dataExemplo,
-                responsavel = "Teste",
-            ),
-            Produto(
-                idProduto = "250520251",
-                campanha = "Teste",
-                nome = "Lata de Atum natural",
-                tipo = "Alimentar",
-                categoria = "Enlatados",
-                validade = dataValidadeExemplo ,
-                estadoProduto = "Ativo",
-                dataEntrada = dataExemplo,
-                responsavel = "Teste",
-            ),
-            Produto(
-                idProduto = "250520252",
-                campanha = "Teste",
-                nome = "Lata de Atum natural",
-                tipo = "Alimentar",
-                categoria = "Enlatados",
-                validade = dataValidadeExemplo ,
-                estadoProduto = "Ativo",
-                dataEntrada = dataExemplo,
-                responsavel = "Teste",
-            ),
-            Produto(
-                idProduto = "250520251",
-                campanha = "Teste",
-                nome = "Arroz 1Kg",
-                tipo = "Alimentar",
-                categoria = "Arroz",
-                validade = dataValidadeExemplo ,
-                estadoProduto = "Desativo",
-                dataEntrada = dataExemplo,
-                responsavel = "Teste",
-            ),
-            Produto(
-                idProduto = "250520251",
-                campanha = "Teste",
-                nome = "Lixivia 1L",
-                tipo = "Limpeza",
-                categoria = "Lixivia",
-                validade = dataValidadeExemplo ,
-                estadoProduto = "Ativo",
-                dataEntrada = dataExemplo,
-                responsavel = "Teste",
-            ),
-            Produto(
-                idProduto = "250520251",
-                campanha = "Teste",
-                nome = "Sabão líquido 1L",
-                tipo = "Higiene Pessoal",
-                categoria = "Sabão",
-                validade = dataValidadeExemplo ,
-                estadoProduto = "Ativo",
-                dataEntrada = dataExemplo,
-                responsavel = "Teste",
-            )
-        ),
-        onBack = {}
+        onBack = {},
+        entrega = Entrega()
     )
 }
 

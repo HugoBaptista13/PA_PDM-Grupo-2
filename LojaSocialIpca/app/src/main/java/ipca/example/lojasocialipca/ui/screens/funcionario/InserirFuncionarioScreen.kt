@@ -1,23 +1,18 @@
 package ipca.example.lojasocialipca.ui.screens.funcionario
 
+import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -28,171 +23,152 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import ipca.example.lojasocialipca.AppModule
+import ipca.example.lojasocialipca.ui.components.TopBar
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun InserirFuncionarioScreen(
-    onBack: () -> Unit = {},
-    onCriarFuncionario: () -> Unit = {}
+    onBack: () -> Unit = {}
 ) {
-    var nome by remember {mutableStateOf("")}
-    var email by remember {mutableStateOf("")}
-    var password by remember {mutableStateOf("")}
-    // erros simples
-    var erro by remember { mutableStateOf(false) }
+    val context = LocalContext.current
+    var nome by remember { mutableStateOf("") }
+    var email by remember { mutableStateOf("") }
+    var password by remember { mutableStateOf("") }
+    var isLoading by remember { mutableStateOf(false) } // Loading state
 
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(Color.White)
-    ) {
-        // TOP BAR
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(56.dp)
-                .background(Color(0xFF006837))
-                .padding(horizontal = 16.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.SpaceBetween
-        ) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                IconButton(onClick = onBack) {
-                    Icon(Icons.AutoMirrored.Filled.ArrowBack, "Voltar", tint = Color.White)
-                }
-                Text(
-                    "Loja Social",
-                    color = Color.White,
-                    fontSize = 18.sp,
-                    fontWeight = FontWeight.Bold
-                )
-            }
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                IconButton(onClick = { }) {
-                    Icon(Icons.Filled.Notifications, "Notificações", tint = Color.White)
-                }
-                Text("IPCA", color = Color.White, fontSize = 16.sp, fontWeight = FontWeight.Medium)
-            }
-        }
+    Box(modifier = Modifier.fillMaxSize()) {
 
-        // TÍTULO
-        Text(
-            text = "Inserir Funcionário",
-            fontSize = 20.sp,
-            fontWeight = FontWeight.Bold,
-            modifier = Modifier.padding(top = 16.dp, start = 16.dp, end = 16.dp)
-        )
-
-        // FORMULÁRIO
         Column(
             modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 16.dp, vertical = 8.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp)
+                .fillMaxSize()
+                .background(Color.White)
+                .padding(16.dp)
         ) {
-            // Nome
-            Column {
-                Text("Nome", fontSize = 14.sp, fontWeight = FontWeight.SemiBold, modifier = Modifier.padding(vertical = 8.dp))
+            TopBar(true, onBack)
+
+            Text(
+                text = "Inserir Funcionário",
+                fontSize = 20.sp,
+                fontWeight = FontWeight.Bold
+            )
+
+            Column(
+                verticalArrangement = Arrangement.spacedBy(16.dp)
+            ) {
                 OutlinedTextField(
                     value = nome,
-                    onValueChange = {
-                        nome = it
-                        erro = false
-                    },
-                    modifier = Modifier.fillMaxWidth(),
-                    label = {
-                        Text(
-                            if (erro && nome.isBlank()) "Preenche o nome do funcionário"
-                            else "Nome do funcionário"
-                        )
-                    },
-                    isError = erro && nome.isBlank()
+                    onValueChange = { nome = it },
+                    label = { Text("Nome do funcionário") },
+                    modifier = Modifier.fillMaxWidth()
                 )
 
-                Text("Email", fontSize = 14.sp, fontWeight = FontWeight.SemiBold, modifier = Modifier.padding(vertical = 8.dp))
                 OutlinedTextField(
                     value = email,
-                    onValueChange = {
-                        email = it
-                        erro = false
-                    },
-                    modifier = Modifier.fillMaxWidth(),
-                    label = {
-                        Text(
-                            if (erro && email.isBlank()) "Preenche o email do funcionário"
-                            else "Email do funcionário"
-                        )
-                    },
-                    isError = erro && email.isBlank()
+                    onValueChange = { email = it },
+                    label = { Text("Email do funcionário") },
+                    modifier = Modifier.fillMaxWidth()
                 )
 
-                Text("Password", fontSize = 14.sp, fontWeight = FontWeight.SemiBold, modifier = Modifier.padding(vertical = 8.dp))
                 OutlinedTextField(
                     value = password,
-                    onValueChange = {
-                        password = it
-                        erro = false
-                    },
-                    modifier = Modifier.fillMaxWidth(),
-                    label = {
-                        Text(
-                            if (erro && password.isBlank()) "Preenche o password do funcionário"
-                            else "Password do funcionário"
-                        )
-                    },
+                    onValueChange = { password = it },
+                    label = { Text("Password do funcionário") },
                     visualTransformation = PasswordVisualTransformation(),
-                    isError = erro && password.isBlank()
+                    modifier = Modifier.fillMaxWidth()
                 )
             }
-        }
 
-        Spacer(modifier = Modifier.weight(1f))
+            Spacer(modifier = Modifier.weight(1f))
 
-        // ALERTA VERMELHO
-        if (erro) {
-            Text(
-                text = "Campos obrigatórios em falta",
-                color = Color.Red,
-                fontSize = 14.sp,
-                fontWeight = FontWeight.Bold,
-                modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
-            )
-        }
-
-        // BOTÃO CRIAR FUNCIONARIO
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(16.dp),
-            horizontalArrangement = Arrangement.Center
-        ) {
             Button(
                 onClick = {
-                    val valido =
-                        nome.isNotBlank() && email.isNotBlank() && password.isNotBlank()
-                    if (valido) {
-                        onCriarFuncionario()
-                    } else {
-                        erro = true
+                    // Validação
+                    if (nome.isBlank() || email.isBlank() || password.isBlank()) {
+                        Toast.makeText(context, "Preencha todos os campos obrigatórios", Toast.LENGTH_SHORT).show()
+                        return@Button
                     }
+
+                    // Validar email
+                    if (!android.util.Patterns.EMAIL_ADDRESS.matcher(email).matches()) {
+                        Toast.makeText(context, "Insira um email válido", Toast.LENGTH_SHORT).show()
+                        return@Button
+                    }
+
+                    // Validar password (mínimo 6 caracteres)
+                    if (password.length < 6) {
+                        Toast.makeText(context, "A password deve ter pelo menos 6 caracteres", Toast.LENGTH_SHORT).show()
+                        return@Button
+                    }
+
+                    isLoading = true // Mostra loading
+
+                    // Criar usuário no Firebase Auth
+                    AppModule.auth.createUserWithEmailAndPassword(email.trim(), password)
+                        .addOnSuccessListener { result ->
+                            val uid = result.user?.uid ?: run {
+                                isLoading = false
+                                return@addOnSuccessListener
+                            }
+
+                            // Adicionar funcionário no Firestore
+                            val funcionario = hashMapOf(
+                                "idFuncionario" to uid,
+                                "nome" to nome.trim(),
+                                "email" to email.trim()
+                            )
+
+                            AppModule.firestore.collection("funcionarios")
+                                .document(uid)
+                                .set(funcionario)
+                                .addOnSuccessListener {
+                                    isLoading = false
+                                    Toast.makeText(context, "Funcionário criado com sucesso!", Toast.LENGTH_SHORT).show()
+                                    onBack()
+                                }
+                                .addOnFailureListener { e ->
+                                    isLoading = false
+                                    Toast.makeText(context, "Erro ao adicionar funcionário: ${e.message}", Toast.LENGTH_LONG).show()
+                                }
+                        }
+                        .addOnFailureListener { e ->
+                            isLoading = false
+                            val msg = when {
+                                e.message?.contains("email address is already in use") == true ->
+                                    "Este email já está registado"
+                                else -> "Erro ao criar usuário: ${e.message}"
+                            }
+                            Toast.makeText(context, msg, Toast.LENGTH_LONG).show()
+                        }
+
                 },
                 colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF006837)),
                 shape = RoundedCornerShape(12.dp),
                 modifier = Modifier.fillMaxWidth()
             ) {
-                Text("Criar Funcionário")
+                Text("Criar Funcionário", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 18.sp)
+            }
+        }
+
+        // Overlay de loading
+        if (isLoading) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(Color.Black.copy(alpha = 0.4f)),
+                contentAlignment = Alignment.Center
+            ) {
+                CircularProgressIndicator(color = Color.White)
             }
         }
     }
 }
+
 
 
 @Preview(showBackground = true)
@@ -200,6 +176,5 @@ fun InserirFuncionarioScreen(
 fun InserirFuncionarioScreenPreview() {
     InserirFuncionarioScreen(
         onBack = {},
-        onCriarFuncionario = {}
     )
 }
