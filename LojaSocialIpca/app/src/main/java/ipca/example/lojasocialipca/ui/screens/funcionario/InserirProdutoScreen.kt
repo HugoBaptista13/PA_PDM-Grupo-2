@@ -17,6 +17,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Close
@@ -40,13 +41,14 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import ipca.example.lojasocialipca.AppModule
 import ipca.example.lojasocialipca.helpers.criarData
-import ipca.example.lojasocialipca.helpers.format
+import ipca.example.lojasocialipca.helpers.formatId
 import ipca.example.lojasocialipca.models.Campanha
 import ipca.example.lojasocialipca.models.TipoProduto
 import ipca.example.lojasocialipca.ui.components.ComboBox
@@ -171,9 +173,42 @@ fun InserirProdutoScreen(
             // DATA DE VALIDADE
             Text("Data de Validade:", fontSize = 16.sp, fontWeight = FontWeight.Medium)
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                OutlinedTextField(dia, onValueChange = { dia = it }, label = { Text("Dia") }, modifier = Modifier.weight(1f))
-                OutlinedTextField(mes, onValueChange = { mes = it }, label = { Text("Mês") }, modifier = Modifier.weight(1f))
-                OutlinedTextField(ano, onValueChange = { ano = it }, label = { Text("Ano") }, modifier = Modifier.weight(1f))
+                OutlinedTextField(
+                    value = dia,
+                    onValueChange = { input ->
+                        dia = input.filter { it.isDigit() }
+                            .take(2)
+                            .let { if (it.toIntOrNull() in 1..31 || it.isEmpty()) it else dia }
+                    },
+                    modifier = Modifier.weight(1f),
+                    label = { Text("Dia") },
+                    singleLine = true,
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
+                )
+
+                OutlinedTextField(
+                    value = mes,
+                    onValueChange = { input ->
+                        mes = input.filter { it.isDigit() }
+                            .take(2)
+                            .let { if (it.toIntOrNull() in 1..12 || it.isEmpty()) it else mes }
+                    },
+                    modifier = Modifier.weight(1f),
+                    label = { Text("Mês") },
+                    singleLine = true,
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
+                )
+
+                OutlinedTextField(
+                    value = ano,
+                    onValueChange = { input ->
+                        ano = input.filter { it.isDigit() }.take(4)
+                    },
+                    modifier = Modifier.weight(1f),
+                    label = { Text("Ano") },
+                    singleLine = true,
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
+                )
             }
 
             // CAMPANHA
@@ -233,7 +268,7 @@ fun InserirProdutoScreen(
                         }
 
                         val dataEntrada = Date()
-                        val baseId = dataEntrada.format().replace("/", "") // ex: "13012026"
+                        val baseId = dataEntrada.formatId().replace("/", "") // ex: "13012026"
 
                         val tasks = mutableListOf<com.google.android.gms.tasks.Task<Void>>() // Lista de tasks de Firestore
 

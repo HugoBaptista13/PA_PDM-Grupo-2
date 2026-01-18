@@ -45,6 +45,8 @@ fun MainFuncionarioScreen(
     onProdutos: () -> Unit = {},
     onCampanhas: () -> Unit = {},
     onCandidaturas: () -> Unit = {},
+    onFuncionarios: () -> Unit = {},
+    onBeneficiarios: () -> Unit = {},
     onEntregas: () -> Unit = {},
     onLogout: () -> Unit = {},
     onPerfil: () -> Unit = {}
@@ -173,11 +175,23 @@ fun MainFuncionarioScreen(
 
                 }
             }
+            Column(
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.spacedBy(16.dp)
+            ) {
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(16.dp)
+                ) {
+                    FuncionarioTile(texto = "Funcionários", iconRes = R.drawable.ic_staff, onClick = onFuncionarios)
+                    FuncionarioTile(texto = "Beneficiários", iconRes = R.drawable.ic_beneficiario, onClick = onBeneficiarios)
+
+                }
+            }
 
             }
         BottomBar (
             onLogout = onLogout,
-            onPerfil= onPerfil
+            onPerfil = onPerfil
         )
     }
 }

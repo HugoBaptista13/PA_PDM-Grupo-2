@@ -1,35 +1,55 @@
 package ipca.example.lojasocialipca.ui.screens.beneficiario
 
+import android.widget.Toast
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.Notifications
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
-import androidx.compose.ui.Alignment
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.google.firebase.firestore.Query
+import ipca.example.lojasocialipca.AppModule
+import ipca.example.lojasocialipca.models.Entrega
 import ipca.example.lojasocialipca.ui.components.ComboBox
+import ipca.example.lojasocialipca.ui.components.TopBar
+import java.util.Date
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun InserirPedidoScreen(
     onBack: () -> Unit = {},
     onInserirPedido: () -> Unit = {}
 ) {
+    val firestore = AppModule.firestore
+    val auth = AppModule.auth
+    val context = LocalContext.current
+
     var tipo by remember { mutableStateOf("Produto Alimentar") }
-    var tipoExpanded by remember { mutableStateOf(false) }
     val tipos = listOf("Produto Alimentar", "Produto de Higiene Pessoal", "Produto de Limpeza")
     var descricao by remember { mutableStateOf("") }
 
-    // erro simples
-    var erro by remember { mutableStateOf(false) }
+    var aSubmeter by remember { mutableStateOf(false) }
 
     Column(
         modifier = Modifier
@@ -37,36 +57,7 @@ fun InserirPedidoScreen(
             .background(Color.White)
     ) {
         // TOP BAR
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(56.dp)
-                .background(Color(0xFF006837))
-                .padding(horizontal = 16.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.SpaceBetween
-        ) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                IconButton(onClick = onBack) {
-                    Icon(Icons.AutoMirrored.Filled.ArrowBack, "Voltar", tint = Color.White)
-                }
-                Text(
-                    "Loja Social",
-                    color = Color.White,
-                    fontSize = 18.sp,
-                    fontWeight = FontWeight.Bold
-                )
-            }
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                IconButton(onClick = { }) {
-                    Icon(Icons.Filled.Notifications, "Notificações", tint = Color.White)
-                }
-                Text("IPCA", color = Color.White, fontSize = 16.sp, fontWeight = FontWeight.Medium)
-            }
-        }
+        TopBar(true, onBack)
 
         // TÍTULO
         Text(
@@ -89,7 +80,7 @@ fun InserirPedidoScreen(
                 selected = tipo,
                 options = tipos,
                 onSelect = { tipo = it },
-                modifier = Modifier
+                modifier = Modifier.fillMaxWidth()
             )
 
             // Descrição do produto
@@ -97,20 +88,11 @@ fun InserirPedidoScreen(
                 Text("Descrição", fontSize = 14.sp, fontWeight = FontWeight.SemiBold)
                 OutlinedTextField(
                     value = descricao,
-                    onValueChange = {
-                        descricao = it
-                        erro = false
-                    },
+                    onValueChange = { descricao = it },
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(160.dp),
-                    label = {
-                        Text(
-                            if (erro && descricao.isBlank()) "Preenche a descrição"
-                            else "Descrição do pedido"
-                        )
-                    },
-                    isError = erro && descricao.isBlank(),
+                    label = { Text("Descrição do pedido") },
                     singleLine = false,
                     maxLines = 6
                 )
@@ -118,17 +100,6 @@ fun InserirPedidoScreen(
         }
 
         Spacer(modifier = Modifier.weight(1f))
-
-        // ALERTA VERMELHO
-        if (erro) {
-            Text(
-                text = "Campos obrigatórios em falta",
-                color = Color.Red,
-                fontSize = 14.sp,
-                fontWeight = FontWeight.Bold,
-                modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
-            )
-        }
 
         // BOTÃO INSERIR PEDIDO
         Row(
@@ -139,22 +110,89 @@ fun InserirPedidoScreen(
         ) {
             Button(
                 onClick = {
-                    val valido = descricao.isNotBlank()
-                    if (valido) {
-                        onInserirPedido()
-                    } else {
-                        erro = true
+                    if (descricao.isBlank()) {
+                        Toast.makeText(context, "Preencha a descrição do pedido", Toast.LENGTH_SHORT).show()
+                        return@Button
                     }
+
+                    aSubmeter = true
+
+                    val uid = auth.currentUser?.uid
+                    if (uid == null) {
+                        Toast.makeText(context, "Utilizador não autenticado", Toast.LENGTH_SHORT).show()
+                        aSubmeter = false
+                        return@Button
+                    }
+
+                    // Buscar beneficiário
+                    firestore.collection("beneficiarios")
+                        .document(uid)
+                        .get()
+                        .addOnSuccessListener { benSnapshot ->
+                            if (!benSnapshot.exists()) {
+                                Toast.makeText(context, "Beneficiário não encontrado", Toast.LENGTH_SHORT).show()
+                                aSubmeter = false
+                                return@addOnSuccessListener
+                            }
+
+                            val destinatarioId = benSnapshot.id
+
+                            // Buscar último numEntrega
+                            firestore.collection("entregas")
+                                .orderBy("numEntrega", Query.Direction.DESCENDING)
+                                .limit(1)
+                                .get()
+                                .addOnSuccessListener { lastSnapshot ->
+                                    val lastNum =
+                                        lastSnapshot.documents.firstOrNull()?.getLong("numEntrega")?.toInt() ?: 0
+
+                                    val docRef = firestore.collection("entregas").document()
+
+                                    val novaEntrega = Entrega(
+                                        idEntrega = docRef.id, // ✅ ID real
+                                        numEntrega = lastNum + 1,
+                                        destinatario = destinatarioId,
+                                        dataSubmissao = Date(),
+                                        tipo = tipo,
+                                        descricao = descricao,
+                                        estadoEntrega = "PENDENTE"
+                                    )
+
+                                    docRef.set(novaEntrega)
+                                        .addOnSuccessListener {
+                                            Toast.makeText(context, "Pedido realizado com sucesso!", Toast.LENGTH_SHORT).show()
+                                            aSubmeter = false
+                                            onInserirPedido()
+                                        }
+                                        .addOnFailureListener {
+                                            Toast.makeText(context, "Erro ao criar pedido", Toast.LENGTH_SHORT).show()
+                                            aSubmeter = false
+                                        }
+                                }
+                                .addOnFailureListener {
+                                    Toast.makeText(context, "Erro ao buscar número de entrega", Toast.LENGTH_SHORT).show()
+                                    aSubmeter = false
+                                }
+                        }
+                        .addOnFailureListener {
+                            Toast.makeText(context, "Erro ao buscar beneficiário", Toast.LENGTH_SHORT).show()
+                            aSubmeter = false
+                        }
                 },
                 colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF006837)),
                 shape = RoundedCornerShape(12.dp),
                 modifier = Modifier.fillMaxWidth()
             ) {
-                Text("Realizar Pedido")
+                if (aSubmeter) {
+                    CircularProgressIndicator(color = Color.White, modifier = Modifier.size(20.dp), strokeWidth = 2.dp)
+                } else {
+                    Text("Realizar Pedido")
+                }
             }
         }
     }
 }
+
 
 @Preview(showBackground = true, showSystemUi = true)
 @Composable

@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
@@ -42,16 +43,21 @@ fun InserirFuncionarioScreen(
     var password by remember { mutableStateOf("") }
     var isLoading by remember { mutableStateOf(false) } // Loading state
 
-    Box(modifier = Modifier.fillMaxSize()) {
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(Color.White)
+    ) {
+        TopBar(true, onBack)
+
+        Spacer(modifier = Modifier.height(16.dp))
 
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .background(Color.White)
-                .padding(16.dp)
-        ) {
-            TopBar(true, onBack)
-
+                .padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp)
+        ){
             Text(
                 text = "Inserir Funcionário",
                 fontSize = 20.sp,
@@ -90,7 +96,11 @@ fun InserirFuncionarioScreen(
                 onClick = {
                     // Validação
                     if (nome.isBlank() || email.isBlank() || password.isBlank()) {
-                        Toast.makeText(context, "Preencha todos os campos obrigatórios", Toast.LENGTH_SHORT).show()
+                        Toast.makeText(
+                            context,
+                            "Preencha todos os campos obrigatórios",
+                            Toast.LENGTH_SHORT
+                        ).show()
                         return@Button
                     }
 
@@ -102,13 +112,17 @@ fun InserirFuncionarioScreen(
 
                     // Validar password (mínimo 6 caracteres)
                     if (password.length < 6) {
-                        Toast.makeText(context, "A password deve ter pelo menos 6 caracteres", Toast.LENGTH_SHORT).show()
+                        Toast.makeText(
+                            context,
+                            "A password deve ter pelo menos 6 caracteres",
+                            Toast.LENGTH_SHORT
+                        ).show()
                         return@Button
                     }
 
                     isLoading = true // Mostra loading
 
-                    // Criar usuário no Firebase Auth
+                    // Criar utilizador no Firebase Auth
                     AppModule.auth.createUserWithEmailAndPassword(email.trim(), password)
                         .addOnSuccessListener { result ->
                             val uid = result.user?.uid ?: run {
@@ -128,12 +142,20 @@ fun InserirFuncionarioScreen(
                                 .set(funcionario)
                                 .addOnSuccessListener {
                                     isLoading = false
-                                    Toast.makeText(context, "Funcionário criado com sucesso!", Toast.LENGTH_SHORT).show()
+                                    Toast.makeText(
+                                        context,
+                                        "Funcionário criado com sucesso!",
+                                        Toast.LENGTH_SHORT
+                                    ).show()
                                     onBack()
                                 }
                                 .addOnFailureListener { e ->
                                     isLoading = false
-                                    Toast.makeText(context, "Erro ao adicionar funcionário: ${e.message}", Toast.LENGTH_LONG).show()
+                                    Toast.makeText(
+                                        context,
+                                        "Erro ao adicionar funcionário: ${e.message}",
+                                        Toast.LENGTH_LONG
+                                    ).show()
                                 }
                         }
                         .addOnFailureListener { e ->
@@ -141,7 +163,8 @@ fun InserirFuncionarioScreen(
                             val msg = when {
                                 e.message?.contains("email address is already in use") == true ->
                                     "Este email já está registado"
-                                else -> "Erro ao criar usuário: ${e.message}"
+
+                                else -> "Erro ao criar utilizador: ${e.message}"
                             }
                             Toast.makeText(context, msg, Toast.LENGTH_LONG).show()
                         }
@@ -151,7 +174,12 @@ fun InserirFuncionarioScreen(
                 shape = RoundedCornerShape(12.dp),
                 modifier = Modifier.fillMaxWidth()
             ) {
-                Text("Criar Funcionário", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 18.sp)
+                Text(
+                    "Criar Funcionário",
+                    color = Color.White,
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 18.sp
+                )
             }
         }
 

@@ -4,6 +4,7 @@ import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Notifications
@@ -14,6 +15,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -79,17 +81,83 @@ fun InserirCampanhaScreen(
             // Data de início
             Text("Data de início")
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                OutlinedTextField(value = diaInicio, onValueChange = { diaInicio = it }, label = { Text("Dia") }, modifier = Modifier.weight(1f))
-                OutlinedTextField(value = mesInicio, onValueChange = { mesInicio = it }, label = { Text("Mês") }, modifier = Modifier.weight(1f))
-                OutlinedTextField(value = anoInicio, onValueChange = { anoInicio = it }, label = { Text("Ano") }, modifier = Modifier.weight(1f))
+                OutlinedTextField(
+                    value = diaInicio,
+                    onValueChange = { input ->
+                        diaInicio = input.filter { it.isDigit() }
+                            .take(2)
+                            .let { if (it.toIntOrNull() in 1..31 || it.isEmpty()) it else diaInicio }
+                    },
+                    modifier = Modifier.weight(1f),
+                    label = { Text("Dia") },
+                    singleLine = true,
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
+                )
+
+                OutlinedTextField(
+                    value = mesInicio,
+                    onValueChange = { input ->
+                        mesInicio = input.filter { it.isDigit() }
+                            .take(2)
+                            .let { if (it.toIntOrNull() in 1..12 || it.isEmpty()) it else mesInicio }
+                    },
+                    modifier = Modifier.weight(1f),
+                    label = { Text("Mês") },
+                    singleLine = true,
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
+                )
+
+                OutlinedTextField(
+                    value = anoInicio,
+                    onValueChange = { input ->
+                        anoInicio = input.filter { it.isDigit() }.take(4)
+                    },
+                    modifier = Modifier.weight(1f),
+                    label = { Text("Ano") },
+                    singleLine = true,
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
+                )
             }
 
             // Data de fim
             Text("Data de fim")
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                OutlinedTextField(value = diaFim, onValueChange = { diaFim = it }, label = { Text("Dia") }, modifier = Modifier.weight(1f))
-                OutlinedTextField(value = mesFim, onValueChange = { mesFim = it }, label = { Text("Mês") }, modifier = Modifier.weight(1f))
-                OutlinedTextField(value = anoFim, onValueChange = { anoFim = it }, label = { Text("Ano") }, modifier = Modifier.weight(1f))
+                OutlinedTextField(
+                    value = diaFim,
+                    onValueChange = { input ->
+                        diaFim = input.filter { it.isDigit() }
+                            .take(2)
+                            .let { if (it.toIntOrNull() in 1..31 || it.isEmpty()) it else diaFim }
+                    },
+                    modifier = Modifier.weight(1f),
+                    label = { Text("Dia") },
+                    singleLine = true,
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
+                )
+
+                OutlinedTextField(
+                    value = mesFim,
+                    onValueChange = { input ->
+                        mesFim = input.filter { it.isDigit() }
+                            .take(2)
+                            .let { if (it.toIntOrNull() in 1..12 || it.isEmpty()) it else mesFim }
+                    },
+                    modifier = Modifier.weight(1f),
+                    label = { Text("Mês") },
+                    singleLine = true,
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
+                )
+
+                OutlinedTextField(
+                    value = anoFim,
+                    onValueChange = { input ->
+                        anoFim = input.filter { it.isDigit() }.take(4)
+                    },
+                    modifier = Modifier.weight(1f),
+                    label = { Text("Ano") },
+                    singleLine = true,
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
+                )
             }
 
             // Descrição
@@ -127,6 +195,11 @@ fun InserirCampanhaScreen(
                             return@Button
                         }
                     } else null
+
+                    if (!dataFimObj!!.after(dataInicio)) {
+                        Toast.makeText(context, "A data de fim deve ser posterior à data de inicio!", Toast.LENGTH_SHORT).show()
+                        return@Button
+                    }
 
                     // Verificar se já existe campanha com este nome
                     AppModule.firestore.collection("campanhas")

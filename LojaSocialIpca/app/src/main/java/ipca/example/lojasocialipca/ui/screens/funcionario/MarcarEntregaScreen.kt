@@ -17,6 +17,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Delete
@@ -40,6 +41,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -122,12 +124,16 @@ fun MarcarEntregaScreen(
             Row(horizontalArrangement = Arrangement.spacedBy(18.dp)) {
                 IconButton(
                     onClick = { linhas.add(LinhaEntregaProduto()) },
-                    modifier = Modifier.size(36.dp).background(Color(0xFF006837), CircleShape)
+                    modifier = Modifier
+                        .size(36.dp)
+                        .background(Color(0xFF006837), CircleShape)
                 ) { Icon(Icons.Default.Add, null, tint = Color.White) }
 
                 IconButton(
                     onClick = { if (linhas.isNotEmpty()) linhas.removeAt(linhas.size - 1) },
-                    modifier = Modifier.size(36.dp).background(Color.Red, CircleShape)
+                    modifier = Modifier
+                        .size(36.dp)
+                        .background(Color.Red, CircleShape)
                 ) { Icon(Icons.Default.Delete, null, tint = Color.White) }
             }
         }
@@ -220,42 +226,101 @@ fun MarcarEntregaScreen(
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                OutlinedTextField(value = dia, onValueChange = { dia = it }, modifier = Modifier.weight(1f), label = { Text("Dia") }, singleLine = true)
-                OutlinedTextField(value = mes, onValueChange = { mes = it }, modifier = Modifier.weight(1f), label = { Text("Mês") }, singleLine = true)
-                OutlinedTextField(value = ano, onValueChange = { ano = it }, modifier = Modifier.weight(1f), label = { Text("Ano") }, singleLine = true)
+                OutlinedTextField(
+                    value = dia,
+                    onValueChange = { input ->
+                        dia = input.filter { it.isDigit() }
+                            .take(2)
+                            .let { if (it.toIntOrNull() in 1..31 || it.isEmpty()) it else dia }
+                    },
+                    modifier = Modifier.weight(1f),
+                    label = { Text("Dia") },
+                    singleLine = true,
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
+                )
+
+                OutlinedTextField(
+                    value = mes,
+                    onValueChange = { input ->
+                        mes = input.filter { it.isDigit() }
+                            .take(2)
+                            .let { if (it.toIntOrNull() in 1..12 || it.isEmpty()) it else mes }
+                    },
+                    modifier = Modifier.weight(1f),
+                    label = { Text("Mês") },
+                    singleLine = true,
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
+                )
+
+                OutlinedTextField(
+                    value = ano,
+                    onValueChange = { input ->
+                        ano = input.filter { it.isDigit() }.take(4)
+                    },
+                    modifier = Modifier.weight(1f),
+                    label = { Text("Ano") },
+                    singleLine = true,
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
+                )
             }
 
             Button(
                 onClick = {
-                    try {
-                        val dataEntrega = criarData(ano.toInt(), mes.toInt() - 1, dia.toInt())
 
-                        // Preparar lista de IDs de produtos selecionados
-                        val produtosSelecionadosIds = linhas.flatMap { linha ->
-                            linha.produtosSelecionados.map { it.substringAfter("ID-").substringBefore("-") }
-                        }
+                    if (entrega.idEntrega.isBlank()) {
+                        Toast.makeText(
+                            context,
+                            "Erro: entrega sem identificador",
+                            Toast.LENGTH_SHORT
+                        ).show()
+                        return@Button
+                    }
 
-                        // Atualizar entrega no Firestore
-                        val docRef = AppModule.firestore.collection("entregas").document(entrega.numEntrega.toString())
-                        val updateData = mapOf(
-                            "produtos" to produtosSelecionadosIds,
-                            "dataEntrega" to dataEntrega,
-                            "estadoEntrega" to "POR_ENTREGAR"
-                        )
-                        docRef.update(updateData)
-                            .addOnSuccessListener {
-                                Toast.makeText(context, "Entrega marcada com sucesso!", Toast.LENGTH_SHORT).show()
-                                onBack()
-                            }
-                            .addOnFailureListener { e ->
-                                Toast.makeText(context, "Erro ao marcar entrega: ${e.message}", Toast.LENGTH_LONG).show()
-                            }
-
+                    val dataEntrega = try {
+                        criarData(ano.toInt(), mes.toInt() - 1, dia.toInt())
                     } catch (e: Exception) {
                         Toast.makeText(context, "Data inválida", Toast.LENGTH_SHORT).show()
+                        return@Button
                     }
+
+                    // Preparar lista de IDs de produtos selecionados
+                    val produtosSelecionadosIds = linhas.flatMap { linha ->
+                        linha.produtosSelecionados.map {
+                            it.substringAfter("ID-").substringBefore("-")
+                        }
+                    }
+
+                    // Atualizar entrega no Firestore (AGORA SEGURO)
+                    val docRef = AppModule.firestore
+                        .collection("entregas")
+                        .document(entrega.idEntrega)
+
+                    val updateData = mapOf(
+                        "produtos" to produtosSelecionadosIds,
+                        "dataEntrega" to dataEntrega,
+                        "estadoEntrega" to "POR_ENTREGAR"
+                    )
+
+                    docRef.update(updateData)
+                        .addOnSuccessListener {
+                            Toast.makeText(
+                                context,
+                                "Entrega marcada com sucesso!",
+                                Toast.LENGTH_SHORT
+                            ).show()
+                            onBack()
+                        }
+                        .addOnFailureListener { e ->
+                            Toast.makeText(
+                                context,
+                                "Erro ao marcar entrega: ${e.message}",
+                                Toast.LENGTH_LONG
+                            ).show()
+                        }
                 },
-                modifier = Modifier.fillMaxWidth().height(56.dp),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(56.dp),
                 shape = RoundedCornerShape(12.dp),
                 colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF006837))
             ) {

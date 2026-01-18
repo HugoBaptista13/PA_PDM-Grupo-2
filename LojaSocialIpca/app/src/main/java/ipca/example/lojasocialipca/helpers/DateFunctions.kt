@@ -13,3 +13,6 @@ fun criarData(ano: Int, mes: Int, dia: Int): Date =
 
 fun Date.format(): String =
     SimpleDateFormat("dd/MM/yyyy", Locale.getDefault()).format(this)
+
+fun Date.formatId(): String =
+    SimpleDateFormat("ddMMyyyyHHmmssSS", Locale.getDefault()).format(this)

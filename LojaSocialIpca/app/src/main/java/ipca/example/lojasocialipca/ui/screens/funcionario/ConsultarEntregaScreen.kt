@@ -49,8 +49,6 @@ import java.util.Date
 
 @Composable
 fun ConsultarEntregasScreen(
-    onRemarcarConfirmado: (Entrega) -> Unit = {},
-    onRemarcarRejeitado: (Entrega) -> Unit = {},
     onMarcar: (Entrega) -> Unit = {},
     onBack: () -> Unit = {}
 ) {
@@ -59,6 +57,8 @@ fun ConsultarEntregasScreen(
     var produtosMap by remember { mutableStateOf<Map<String, Produto>>(emptyMap()) }
 
     var mostrarDialog by remember { mutableStateOf(false) }
+    var mostrarDialogCancelar by remember { mutableStateOf(false) }
+    var mostrarDialogEntregar by remember { mutableStateOf(false) }
     var entregaSelecionada by remember { mutableStateOf<Entrega?>(null) }
 
     // Buscar produtos do Firestore
@@ -93,6 +93,7 @@ fun ConsultarEntregasScreen(
                 entregas = snapshot.documents.mapNotNull { doc ->
                     try {
                         Entrega(
+                            idEntrega = doc.getString("idEntrega") ?: "",
                             numEntrega = doc.getLong("numEntrega")?.toInt() ?: 0,
                             destinatario = doc.getString("destinatario") ?: "",
                             responsavel = doc.getString("responsavel"),
@@ -128,16 +129,23 @@ fun ConsultarEntregasScreen(
                     entrega = entrega,
                     produtosMap = produtosMap,
                     onAcaoPrincipal = {
-                        if (entrega.estadoEntrega == "POR_REMARCAR") {
-                            entregaSelecionada = entrega
-                            mostrarDialog = true
-                        } else {
-                            onMarcar(entrega)
+                        when (entrega.estadoEntrega) {
+                            "POR_REMARCAR" -> {
+                                entregaSelecionada = entrega
+                                mostrarDialog = true
+                            }
+                            "POR_ENTREGAR" -> {
+                                entregaSelecionada = entrega
+                                mostrarDialogEntregar = true
+                            }
+                            else -> {
+                                onMarcar(entrega)
+                            }
                         }
                     },
                     onCancelar = {
                         entregaSelecionada = entrega
-                        mostrarDialog = true
+                        mostrarDialogCancelar = true
                     }
                 )
             }
@@ -170,8 +178,10 @@ fun ConsultarEntregasScreen(
                     Button(
                         onClick = {
                             mostrarDialog = false
-                            val docRef = AppModule.firestore.collection("entregas")
-                                .document(entregaSelecionada!!.numEntrega.toString())
+
+                            val docRef = AppModule.firestore
+                                .collection("entregas")
+                                .document(entregaSelecionada!!.idEntrega)
 
                             docRef.update(
                                 mapOf(
@@ -179,8 +189,12 @@ fun ConsultarEntregasScreen(
                                     "estadoEntrega" to "POR_ENTREGAR"
                                 )
                             )
-                            Toast.makeText(context, "Entrega remarcada!", Toast.LENGTH_SHORT).show()
-                            onRemarcarConfirmado(entregaSelecionada!!)
+                                .addOnSuccessListener {
+                                    Toast.makeText(context, "Entrega remarcada!", Toast.LENGTH_SHORT).show()
+                                }
+                                .addOnFailureListener {
+                                    Toast.makeText(context, "Erro ao remarcar entrega", Toast.LENGTH_SHORT).show()
+                                }
                         },
                         modifier = Modifier.fillMaxWidth(),
                         colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF006837)),
@@ -190,8 +204,10 @@ fun ConsultarEntregasScreen(
                     Button(
                         onClick = {
                             mostrarDialog = false
-                            val docRef = AppModule.firestore.collection("entregas")
-                                .document(entregaSelecionada!!.numEntrega.toString())
+
+                            val docRef = AppModule.firestore
+                                .collection("entregas")
+                                .document(entregaSelecionada!!.idEntrega)
 
                             docRef.update(
                                 mapOf(
@@ -199,13 +215,196 @@ fun ConsultarEntregasScreen(
                                     "estadoEntrega" to "POR_ENTREGAR"
                                 )
                             )
-                            Toast.makeText(context, "Remarcação rejeitada!", Toast.LENGTH_SHORT).show()
-                            onRemarcarRejeitado(entregaSelecionada!!)
+                                .addOnSuccessListener {
+                                    Toast.makeText(context, "Remarcação rejeitada!", Toast.LENGTH_SHORT).show()
+                                }
+                                .addOnFailureListener {
+                                    Toast.makeText(context, "Erro ao rejeitar remarcação", Toast.LENGTH_SHORT).show()
+                                }
                         },
                         modifier = Modifier.fillMaxWidth(),
                         colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFB00000)),
                         shape = RoundedCornerShape(12.dp)
                     ) { Text("Rejeitar", fontSize = 18.sp, fontWeight = FontWeight.Bold) }
+                }
+            }
+        }
+    }
+
+    if (mostrarDialogEntregar && entregaSelecionada != null) {
+        Dialog(onDismissRequest = { mostrarDialogEntregar = false }) {
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(20.dp),
+                colors = CardDefaults.cardColors(containerColor = Color.White)
+            ) {
+                Column(
+                    modifier = Modifier.padding(20.dp),
+                    verticalArrangement = Arrangement.spacedBy(16.dp)
+                ) {
+
+                    // Botão fechar
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.End
+                    ) {
+                        IconButton(onClick = { mostrarDialogEntregar = false }) {
+                            Icon(
+                                Icons.Default.Close,
+                                contentDescription = "Fechar",
+                                tint = Color.Red
+                            )
+                        }
+                    }
+
+                    Text(
+                        text = "Confirmar entrega Nº${entregaSelecionada!!.numEntrega}?",
+                        fontSize = 18.sp
+                    )
+
+                    Spacer(Modifier.height(8.dp))
+
+                    Button(
+                        onClick = {
+                            mostrarDialogEntregar = false
+
+                            val entrega = entregaSelecionada!!
+
+                            if (entrega.idEntrega.isBlank()) {
+                                Toast.makeText(context, "Erro: entrega inválida", Toast.LENGTH_SHORT).show()
+                                return@Button
+                            }
+
+                            val firestore = AppModule.firestore
+                            val batch = firestore.batch()
+
+                            val entregaRef = firestore
+                                .collection("entregas")
+                                .document(entrega.idEntrega)
+
+                            batch.update(
+                                entregaRef,
+                                mapOf(
+                                    "estadoEntrega" to "ENTREGUE",
+                                    "dataEntrega" to Date()
+                                )
+                            )
+
+                            entrega.produtos.forEach { idProduto ->
+                                val produtoRef = firestore
+                                    .collection("produtos")
+                                    .document(idProduto)
+
+                                batch.update(produtoRef, "estadoProduto", "Inativo")
+                            }
+
+                            batch.commit()
+                                .addOnSuccessListener {
+                                    Toast.makeText(
+                                        context,
+                                        "Entrega concluída e produtos atualizados!",
+                                        Toast.LENGTH_SHORT
+                                    ).show()
+                                }
+                                .addOnFailureListener { e ->
+                                    Toast.makeText(
+                                        context,
+                                        "Erro ao concluir entrega: ${e.message}",
+                                        Toast.LENGTH_LONG
+                                    ).show()
+                                }
+                        },
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = Color(0xFF006837)
+                        ),
+                        shape = RoundedCornerShape(12.dp)
+                    ) {
+                        Text(
+                            "Sim",
+                            fontSize = 18.sp,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
+
+                    // Botão NÃO – fecha diálogo
+                    Button(
+                        onClick = { mostrarDialogEntregar = false },
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = Color(0xFFB00000)
+                        ),
+                        shape = RoundedCornerShape(12.dp)
+                    ) {
+                        Text(
+                            "Não",
+                            fontSize = 18.sp,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
+                }
+            }
+        }
+    }
+
+    if (mostrarDialogCancelar && entregaSelecionada != null) {
+        Dialog(onDismissRequest = { mostrarDialogCancelar = false }) {
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(20.dp),
+                colors = CardDefaults.cardColors(containerColor = Color.White)
+            ) {
+                Column(modifier = Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
+                    // Botão fechar
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.End
+                    ) {
+                        IconButton(onClick = { mostrarDialogCancelar = false }) {
+                            Icon(Icons.Default.Close, contentDescription = "Fechar", tint = Color.Red)
+                        }
+                    }
+
+                    Text(
+                        "Deseja cancelar a entrega Nº${entregaSelecionada!!.numEntrega}?",
+                        fontSize = 18.sp
+                    )
+
+                    Spacer(Modifier.height(8.dp))
+
+                    // Botão SIM - cancela a entrega
+                    Button(
+                        onClick = {
+                            mostrarDialogCancelar = false
+
+                            val docRef = AppModule.firestore
+                                .collection("entregas")
+                                .document(entregaSelecionada!!.idEntrega)
+
+                            docRef.update("estadoEntrega", "CANCELADA")
+                                .addOnSuccessListener {
+                                    Toast.makeText(context, "Entrega cancelada!", Toast.LENGTH_SHORT).show()
+                                }
+                                .addOnFailureListener { e ->
+                                    Toast.makeText(context, "Erro ao cancelar: ${e.message}", Toast.LENGTH_SHORT).show()
+                                }
+                        },
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF006837)),
+                        shape = RoundedCornerShape(12.dp)
+                    ) {
+                        Text("Sim", fontSize = 18.sp, fontWeight = FontWeight.Bold)
+                    }
+
+                    // Botão NÃO - fecha diálogo
+                    Button(
+                        onClick = { mostrarDialogCancelar = false },
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFB00000)),
+                        shape = RoundedCornerShape(12.dp)
+                    ) {
+                        Text("Não", fontSize = 18.sp, fontWeight = FontWeight.Bold)
+                    }
                 }
             }
         }
@@ -219,13 +418,16 @@ fun EntregaCard(
     onAcaoPrincipal: () -> Unit,
     onCancelar: () -> Unit
 ) {
-    val corFundo = if (entrega.estadoEntrega == "ENTREGUE") Color(0xFF00B050) else Color(0xFFE0E0E0)
+    val corFundo = if (entrega.estadoEntrega == "ENTREGUE") Color(0xFF00B050)
+    else if (entrega.estadoEntrega == "CANCELADA") Color(0xFFFF2F2F)
+    else Color(0xFFE0E0E0)
 
     val estadoTexto = when (entrega.estadoEntrega) {
         "PENDENTE" -> "Pendente"
         "POR_ENTREGAR" -> "Por Entregar"
         "POR_REMARCAR" -> "Por Remarcar"
         "ENTREGUE" -> "Entregue"
+        "CANCELADA" -> "Cancelada"
         else -> entrega.estadoEntrega
     }
 

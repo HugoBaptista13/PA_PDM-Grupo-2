@@ -1,5 +1,6 @@
 package ipca.example.lojasocialipca.ui.screens.candidato
 
+import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -10,17 +11,15 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.CheckboxDefaults
-import androidx.compose.material3.Icon
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.RadioButton
@@ -35,21 +34,30 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import ipca.example.lojasocialipca.AppModule
 import ipca.example.lojasocialipca.helpers.criarData
 import ipca.example.lojasocialipca.models.Candidatura
 import ipca.example.lojasocialipca.ui.components.ComboBox
+import ipca.example.lojasocialipca.ui.components.TopBar
 import java.util.Date
 
 @Composable
 fun CandidaturaScreen(
-    onCandidaturaSuccess: () -> Unit = {}
+    onCandidaturaSuccess: () -> Unit = {},
+    onBack: () -> Unit = {}
 ) {
+    val firestore = AppModule.firestore
+    val auth = AppModule.auth
+    val context = LocalContext.current
+
     var step by remember { mutableStateOf(1) }
+    var aSubmeter by remember { mutableStateOf(false) }
 
     val candidatura = remember { Candidatura() }
 
@@ -60,25 +68,7 @@ fun CandidaturaScreen(
     ) {
 
         // TOP BAR
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(56.dp)
-                .background(Color(0xFF006837))
-                .padding(horizontal = 16.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.SpaceBetween
-        ) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Voltar", tint = Color.White)
-                Spacer(Modifier.width(8.dp))
-                Text("Loja Social", color = Color.White, fontSize = 18.sp, fontWeight = FontWeight.Bold)
-            }
-            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                Icon(Icons.Filled.Notifications, contentDescription = "Notificações", tint = Color.White)
-                Text("IPCA", color = Color.White, fontSize = 16.sp, fontWeight = FontWeight.Medium)
-            }
-        }
+        TopBar(true, onBack)
 
         // CONTEÚDO
         when (step) {
@@ -93,7 +83,8 @@ fun CandidaturaScreen(
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 16.dp)
+                .padding(horizontal = 16.dp),
+            horizontalArrangement = Arrangement.spacedBy(6.dp)
         ) {
             repeat(3) { index ->
                 Box(
@@ -101,11 +92,10 @@ fun CandidaturaScreen(
                         .weight(1f)
                         .height(6.dp)
                         .background(
-                            if (index < step) Color(0xFF006837) else Color(0xFFE0E0E0),
-                            RoundedCornerShape(3.dp)
+                            color = if (index < step) Color(0xFF006837) else Color(0xFFE0E0E0),
+                            shape = RoundedCornerShape(3.dp)
                         )
                 )
-                if (index < 2) Spacer(Modifier.width(6.dp))
             }
         }
 
@@ -127,25 +117,109 @@ fun CandidaturaScreen(
 
             Button(
                 onClick = {
+                    val toastInvalido: () -> Unit = {
+                        Toast.makeText(context, "Preencha todos os campos obrigatórios", Toast.LENGTH_SHORT).show()
+                    }
+
+                    // Validações de cada etapa
+                    when (step) {
+                        1 -> {
+                            if (candidatura.nome.isBlank() || candidatura.email.isBlank() || candidatura.cartaoCidadao.isBlank() ||
+                                candidatura.telemovel.isBlank() || candidatura.anoLetivo.isBlank()
+                            ) {
+                                toastInvalido()
+                                return@Button
+                            }
+                        }
+                        2 -> {
+                            if (candidatura.grau.isBlank() || candidatura.curso.isBlank() ||
+                                candidatura.numAluno == 0 || candidatura.tipologiaPedido.isEmpty()
+                            ) {
+                                toastInvalido()
+                                return@Button
+                            }
+                        }
+                        3 -> {
+                            if (candidatura.bolseiro && candidatura.valorBolsa == null) {
+                                Toast.makeText(context, "Indique o valor da bolsa", Toast.LENGTH_SHORT).show()
+                                return@Button
+                            }
+                        }
+                    }
+
+                    // Passa para a próxima etapa ou submete
                     if (step < 3) {
                         step++
                     } else {
-                        onCandidaturaSuccess()
+                        // Submeter candidatura
+                        aSubmeter = true
                         candidatura.dataSubmissao = Date()
-                        candidatura.estadoCandidatura = "Submetida"
+                        candidatura.estadoCandidatura = "FILA_ESPERA"
 
-                        // PRINT
-                        println(candidatura)
+                        val uid = auth.currentUser?.uid
+
+                        if (uid != null) {
+                            firestore.collection("candidaturas")
+                                .add(candidatura)
+                                .addOnSuccessListener { candidaturaRef ->
+                                    firestore.collection("beneficiarios")
+                                        .whereEqualTo("idBeneficiario", uid)
+                                        .get()
+                                        .addOnSuccessListener { snapshot ->
+                                            if (!snapshot.isEmpty) {
+                                                val doc = snapshot.documents.first()
+                                                val beneficiarioRef = doc.reference
+                                                val candidaturasAtuais = doc.get("candidaturas") as? List<String> ?: emptyList()
+                                                val novaLista = candidaturasAtuais + candidaturaRef.id
+
+                                                beneficiarioRef.update("candidaturas", novaLista)
+                                                    .addOnSuccessListener {
+                                                        Toast.makeText(context, "Candidatura submetida com sucesso!", Toast.LENGTH_SHORT).show()
+                                                        aSubmeter = false
+                                                        onCandidaturaSuccess()
+                                                    }
+                                                    .addOnFailureListener {
+                                                        Toast.makeText(context, "Erro ao atualizar beneficiário", Toast.LENGTH_SHORT).show()
+                                                        aSubmeter = false
+                                                    }
+                                            } else {
+                                                Toast.makeText(context, "Beneficiário não encontrado", Toast.LENGTH_SHORT).show()
+                                                aSubmeter = false
+                                            }
+                                        }
+                                        .addOnFailureListener {
+                                            Toast.makeText(context, "Erro ao buscar beneficiário", Toast.LENGTH_SHORT).show()
+                                            aSubmeter = false
+                                        }
+                                }
+                                .addOnFailureListener {
+                                    Toast.makeText(context, "Erro ao submeter candidatura", Toast.LENGTH_SHORT).show()
+                                    aSubmeter = false
+                                }
+                        } else {
+                            Toast.makeText(context, "Utilizador não autenticado", Toast.LENGTH_SHORT).show()
+                            aSubmeter = false
+                        }
                     }
                 },
                 colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF006837)),
-                shape = RoundedCornerShape(12.dp)
+                shape = RoundedCornerShape(12.dp),
+                enabled = !aSubmeter
             ) {
-                Text(if (step < 3) "Seguinte" else "Submeter")
+                if (aSubmeter) {
+                    CircularProgressIndicator(
+                        color = Color.White,
+                        modifier = Modifier.size(20.dp),
+                        strokeWidth = 2.dp
+                    )
+                } else {
+                    Text(if (step < 3) "Seguinte" else "Submeter")
+                }
             }
         }
     }
 }
+
 
 @Composable
 fun CandidaturaDadosPessoais(c: Candidatura) {
@@ -283,8 +357,6 @@ fun CandidaturaDadosPessoais(c: Candidatura) {
         }
     }
 }
-
-
 
 @Composable
 fun CandidaturaDadosAcademicos(c: Candidatura) {
@@ -481,7 +553,8 @@ fun CandidaturaApoiosExtras(c: Candidatura) {
                     c.valorBolsa = it.toDoubleOrNull()
                 },
                 modifier = Modifier.fillMaxWidth(),
-                label = { Text("Indique a entidade e o valor") }
+                label = { Text("Indique o valor") },
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
             )
         }
     }

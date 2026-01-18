@@ -1,76 +1,71 @@
 package ipca.example.lojasocialipca.ui.screens.beneficiario
 
 
+import android.widget.Toast
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.Notifications
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
-import androidx.compose.ui.Alignment
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import ipca.example.lojasocialipca.AppModule
+import ipca.example.lojasocialipca.helpers.criarData
+import ipca.example.lojasocialipca.helpers.format
+import ipca.example.lojasocialipca.models.Entrega
+import ipca.example.lojasocialipca.ui.components.TopBar
+import java.util.Date
 
 @Composable
-fun RemarcarPedidoScreen() {
+fun RemarcarPedidoScreen(
+    entrega: Entrega,
+    onBack: () -> Unit = {}
+) {
+    val firestore = AppModule.firestore
+    val context = LocalContext.current
+
     var novoDia by remember { mutableStateOf("") }
     var novoMes by remember { mutableStateOf("") }
     var novoAno by remember { mutableStateOf("") }
+
+    val estadoTexto = when (entrega.estadoEntrega) {
+        "PENDENTE" -> "Pendente"
+        "POR_ENTREGAR" -> "Por Entregar"
+        "POR_REMARCAR" -> "Por Remarcar"
+        "ENTREGUE" -> "Entregue"
+        else -> entrega.estadoEntrega
+    }
 
     Column(
         modifier = Modifier
             .fillMaxSize()
             .background(Color.White)
     ) {
-        // TOP BAR
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(56.dp)
-                .background(Color(0xFF006837))
-                .padding(horizontal = 16.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.SpaceBetween
-        ) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Icon(
-                    Icons.AutoMirrored.Filled.ArrowBack,
-                    contentDescription = "Voltar",
-                    tint = Color.White
-                )
-                Spacer(Modifier.width(8.dp))
-                Text(
-                    "Loja Social",
-                    color = Color.White,
-                    fontSize = 18.sp,
-                    fontWeight = FontWeight.Bold
-                )
-            }
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                Icon(
-                    Icons.Filled.Notifications,
-                    contentDescription = "Notificações",
-                    tint = Color.White
-                )
-                Text(
-                    "IPCA",
-                    color = Color.White,
-                    fontSize = 16.sp,
-                    fontWeight = FontWeight.Medium
-                )
-            }
-        }
+        TopBar(true, onBack)
 
-        // CONTEÚDO
         Column(
             modifier = Modifier
                 .fillMaxSize()
@@ -79,11 +74,11 @@ fun RemarcarPedidoScreen() {
         ) {
             Text(
                 "Remarcar Pedido",
-                fontSize = 20.sp,
-                fontWeight = FontWeight.Bold
+                fontSize = 24.sp,
+                fontWeight = FontWeight.Black
             )
 
-            // CARD INFO PEDIDO (adapta ao teu mockup)
+            // CARD INFO PEDIDO
             Card(
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(12.dp),
@@ -93,18 +88,16 @@ fun RemarcarPedidoScreen() {
                     modifier = Modifier.padding(16.dp),
                     verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    Text("Pedido nº 12345", fontSize = 16.sp, fontWeight = FontWeight.Bold)
-                    Text("Nome do utente: João Silva", fontSize = 14.sp)
-                    Text("Data atual de entrega: 10/01/2026", fontSize = 14.sp)
-                    Text("Hora: 15:30", fontSize = 14.sp)
-                    Text("Estado: Agendado", fontSize = 14.sp)
+                    Text("Pedido nº ${entrega.numEntrega}", fontSize = 16.sp, fontWeight = FontWeight.Bold)
+                    Text("Data atual de entrega: ${entrega.dataEntrega?.format() ?: "Não definida"}", fontSize = 14.sp)
+                    Text("Estado: $estadoTexto", fontSize = 14.sp)
                 }
             }
 
             Text(
                 "Remarcar entrega",
-                fontSize = 18.sp,
-                fontWeight = FontWeight.SemiBold
+                fontSize = 24.sp,
+                fontWeight = FontWeight.Black
             )
 
             Text(
@@ -116,26 +109,41 @@ fun RemarcarPedidoScreen() {
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 OutlinedTextField(
                     value = novoDia,
-                    onValueChange = { novoDia = it },
+                    onValueChange = { input ->
+                        novoDia = input.filter { it.isDigit() }
+                            .take(2)
+                            .let { if (it.toIntOrNull() in 1..31 || it.isEmpty()) it else novoDia }
+                    },
+                    modifier = Modifier.weight(1f),
                     label = { Text("Dia") },
-                    modifier = Modifier.weight(1f)
+                    singleLine = true,
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
                 )
+
                 OutlinedTextField(
                     value = novoMes,
-                    onValueChange = { novoMes = it },
+                    onValueChange = { input ->
+                        novoMes = input.filter { it.isDigit() }
+                            .take(2)
+                            .let { if (it.toIntOrNull() in 1..12 || it.isEmpty()) it else novoMes }
+                    },
+                    modifier = Modifier.weight(1f),
                     label = { Text("Mês") },
-                    modifier = Modifier.weight(1f)
+                    singleLine = true,
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
                 )
+
                 OutlinedTextField(
                     value = novoAno,
-                    onValueChange = { novoAno = it },
+                    onValueChange = { input ->
+                        novoAno = input.filter { it.isDigit() }.take(4)
+                    },
+                    modifier = Modifier.weight(1f),
                     label = { Text("Ano") },
-                    modifier = Modifier.weight(1f)
+                    singleLine = true,
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
                 )
             }
-
-
-
 
             Spacer(Modifier.weight(1f))
 
@@ -144,7 +152,56 @@ fun RemarcarPedidoScreen() {
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Button(
-                    onClick = { /* confirmar remarcação */ },
+                    onClick = {
+                        // Validação da nova data
+                        val dia = novoDia.toIntOrNull()
+                        val mes = novoMes.toIntOrNull()
+                        val ano = novoAno.toIntOrNull()
+
+                        if (dia == null || mes == null || ano == null) {
+                            Toast.makeText(context, "Preencha a data corretamente", Toast.LENGTH_SHORT).show()
+                            return@Button
+                        }
+
+                        val novaData = try {
+                            criarData(ano = ano, mes = mes - 1, dia = dia)
+                        } catch (e: Exception) {
+                            Toast.makeText(context, "Data inválida", Toast.LENGTH_SHORT).show()
+                            return@Button
+                        }
+
+                        if (!novaData.after(entrega.dataEntrega)) {
+                            Toast.makeText(context, "A nova data deve ser posterior à data atual", Toast.LENGTH_SHORT).show()
+                            return@Button
+                        }
+
+                        // Atualizar entrega no Firestore
+                        firestore.collection("entregas")
+                            .whereEqualTo("numEntrega", entrega.numEntrega)
+                            .whereEqualTo("destinatario", entrega.destinatario)
+                            .get()
+                            .addOnSuccessListener { snapshot ->
+                                if (!snapshot.isEmpty) {
+                                    val docRef = snapshot.documents.first().reference
+                                    docRef.update(
+                                        mapOf(
+                                            "dataRemarcacao" to novaData,
+                                            "estadoEntrega" to "POR_REMARCAR"
+                                        )
+                                    ).addOnSuccessListener {
+                                        Toast.makeText(context, "Entrega remarcada com sucesso!", Toast.LENGTH_SHORT).show()
+                                        onBack()
+                                    }.addOnFailureListener {
+                                        Toast.makeText(context, "Erro ao atualizar entrega", Toast.LENGTH_SHORT).show()
+                                    }
+                                } else {
+                                    Toast.makeText(context, "Entrega não encontrada", Toast.LENGTH_SHORT).show()
+                                }
+                            }
+                            .addOnFailureListener {
+                                Toast.makeText(context, "Erro ao buscar entrega", Toast.LENGTH_SHORT).show()
+                            }
+                    },
                     colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF037C49)),
                     modifier = Modifier
                         .weight(1f)
@@ -158,8 +215,9 @@ fun RemarcarPedidoScreen() {
                         color = Color.White
                     )
                 }
+
                 Button(
-                    onClick = { /* cancelar / voltar */ },
+                    onClick = onBack,
                     colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF9F0D00)),
                     modifier = Modifier
                         .weight(1f)
@@ -180,8 +238,15 @@ fun RemarcarPedidoScreen() {
     }
 }
 
+
 @Preview(showBackground = true, showSystemUi = true,)
 @Composable
 fun PreviewRemarcarPedido() {
-    RemarcarPedidoScreen()
+    RemarcarPedidoScreen(
+        entrega = Entrega(
+            numEntrega = 12345,
+            dataEntrega = Date(),
+            estadoEntrega = "POR_ENTREGAR"
+        )
+    )
 }

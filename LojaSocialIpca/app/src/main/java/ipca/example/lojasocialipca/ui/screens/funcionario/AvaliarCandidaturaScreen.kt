@@ -37,6 +37,7 @@ import androidx.compose.ui.unit.sp
 import ipca.example.lojasocialipca.AppModule
 import ipca.example.lojasocialipca.helpers.format
 import ipca.example.lojasocialipca.models.Candidatura
+import ipca.example.lojasocialipca.models.Notificacao
 import ipca.example.lojasocialipca.ui.components.TopBar
 import java.util.Date
 
@@ -155,15 +156,32 @@ fun AvaliarCandidaturaScreen(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
+                    // Botão Aprovar
                     Button(
                         onClick = {
-                            // Atualiza Firestore
-                            val docRef = AppModule.firestore
-                                .collection("candidaturas")
-                                .document(candidatura.idCandidatura)
+                            val firestore = AppModule.firestore
+                            val beneficiarioRef = firestore.collection("beneficiarios")
+                                .whereArrayContains("candidaturas", candidatura.idCandidatura)
 
-                            docRef.update("estadoCandidatura", "APROVADA")
+                            // Atualizar candidatura
+                            firestore.collection("candidaturas")
+                                .document(candidatura.idCandidatura)
+                                .update("estadoCandidatura", "APROVADA")
                                 .addOnSuccessListener {
+                                    // Atualizar beneficiário
+                                    beneficiarioRef.get()
+                                        .addOnSuccessListener { snapshot ->
+                                            if (!snapshot.isEmpty) {
+                                                val doc = snapshot.documents.first()
+                                                doc.reference.update(
+                                                    mapOf(
+                                                        "aceite" to true,
+                                                        "dataAprovacao" to Date()
+                                                    )
+                                                )
+                                            }
+                                        }
+
                                     Toast.makeText(context, "Candidatura aprovada!", Toast.LENGTH_SHORT).show()
                                     onBack()
                                 }
@@ -178,6 +196,7 @@ fun AvaliarCandidaturaScreen(
                         Text("Aprovar", fontSize = 18.sp, fontWeight = FontWeight.Bold)
                     }
 
+                    // Botão Reprovar
                     Button(
                         onClick = { mostrarMotivo = true },
                         modifier = Modifier.weight(1f),
@@ -208,17 +227,38 @@ fun AvaliarCandidaturaScreen(
                     Button(
                         onClick = {
                             if (motivo.isNotBlank()) {
-                                val docRef = AppModule.firestore
-                                    .collection("candidaturas")
-                                    .document(candidatura.idCandidatura)
+                                val firestore = AppModule.firestore
 
-                                docRef.update(
-                                    mapOf(
-                                        "estadoCandidatura" to "REPROVADA",
-                                        "motivoReprovacao" to motivo
+                                // Atualiza candidatura
+                                firestore.collection("candidaturas")
+                                    .document(candidatura.idCandidatura)
+                                    .update("estadoCandidatura", "REPROVADA",
                                     )
-                                )
                                     .addOnSuccessListener {
+                                        // Buscar beneficiário e criar notificação
+                                        firestore.collection("beneficiarios")
+                                            .whereArrayContains("candidaturas", candidatura.idCandidatura)
+                                            .get()
+                                            .addOnSuccessListener { snapshot ->
+                                                if (!snapshot.isEmpty) {
+                                                    val doc = snapshot.documents.first()
+                                                    val destinatarioId = doc.id
+
+                                                    // Criar notificação
+                                                    firestore.collection("notificacoes")
+                                                        .add(
+                                                            Notificacao(
+                                                                mensagem = "A sua candidatura foi reprovada pelo seguinte motivo: $motivo",
+                                                                destinatario = destinatarioId
+                                                            )
+                                                        )
+                                                        .addOnSuccessListener { docRef ->
+                                                            // Atualiza o id do objeto para o id do documento gerado
+                                                            docRef.update("id", docRef.id)
+                                                        }
+                                                }
+                                            }
+
                                         Toast.makeText(context, "Candidatura reprovada!", Toast.LENGTH_SHORT).show()
                                         onBack()
                                     }
@@ -233,10 +273,16 @@ fun AvaliarCandidaturaScreen(
                         colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFB00000)),
                         shape = RoundedCornerShape(12.dp)
                     ) {
-                        Text("Submeter Reprovação", fontSize = 18.sp, fontWeight = FontWeight.Bold, color = Color.White)
+                        Text(
+                            "Submeter Reprovação",
+                            fontSize = 18.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = Color.White
+                        )
                     }
                 }
             }
+
 
             Spacer(Modifier.height(24.dp))
         }
